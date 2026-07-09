@@ -1,0 +1,11 @@
+* * *
+
+# <span style="color: rgb(75, 172, 198);"><span style="background: rgb(0, 116, 63);">Практическая часть</span></span>
+
+[<span style="background-color: rgb(0, 123, 255); color: white; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 40px;">👉👉👉 Нажми на меня 👈👈👈</span>](file:///c:/Users/user/Desktop/obsidian/1.%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D0%B0.md)
+
+* * *
+
+# <span><span style="background: rgb(0, 116, 63);">Контакты для вопросов:</span></span>
+
+<table align="center" style="border-collapse: collapse; width: 100%; margin-bottom: 1em; position: relative;"><tbody><tr style="border-bottom: 1px solid var(--border-subtle);"><th style="text-align: left; font-size: 60px; padding: 8px; font-weight: bold;">📱 Телефон</th><td style="text-align: center; font-size: 60px; padding: 8px;">+998 99 820 06 86</td></tr><tr style="border-bottom: 1px solid var(--border-subtle);"><th style="text-align: left; font-size: 60px; padding: 8px; font-weight: bold;">💬 Telegram</th><td style="text-align: center; font-size: 60px; padding: 8px;"><a href="https://t.me/Bytonite" style="color: var(--interactive-accent);">@Bytonite</a></td></tr><tr style="border-bottom: 1px solid var(--border-subtle);"><th style="text-align: left; font-size: 60px; padding: 8px; font-weight: bold;">📷 Instagram</th><td style="text-align: center; font-size: 60px; padding: 8px;"><a href="https://www.instagram.com/bytonite" style="color: var(--interactive-accent);">@bytonite</a></td></tr><tr style="border-bottom: 1px solid var(--border-subtle);"><th style="text-align: left; font-size: 60px; padding: 8px; font-weight: bold;">📺 Youtube</th><td style="text-align: center; font-size: 60px; padding: 8px;"><a href="http://www.youtube.com/@Bytonite" style="color: var(--interactive-accent);">bytonite</a></td></tr><tr style="border-bottom: 1px solid var(--border-subtle);"><th style="text-align: left; font-size: 60px; padding: 8px; font-weight: bold;">📧 Email</th><td style="text-align: center; font-size: 60px; padding: 8px;">bytonite8@gmail.com</td></tr></tbody></table>

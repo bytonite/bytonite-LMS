@@ -1,0 +1,786 @@
+.markdown-preview {
+    font-size: 16px;
+}
+
+/* Obsidian-style scrollbar */
+.markdown-preview::-webkit-scrollbar {
+    width: 8px;
+}
+
+.markdown-preview::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.markdown-preview::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.markdown-preview::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.markdown-content-wrapper {
+    width: 100%;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Live split-screen highlighting */
+.live-highlight {
+    border-radius: 4px;
+    animation: highlight-fade 1.5s ease-out forwards;
+}
+
+@keyframes highlight-fade {
+    0% {
+        outline: 2px solid var(--interactive-accent);
+        background-color: rgba(var(--interactive-accent-rgb), 0.1);
+    }
+    100% {
+        outline: 2px solid transparent;
+        background-color: transparent;
+    }
+}
+
+/* Prevent ANY media or layout block from overflowing the editor */
+.markdown-content-wrapper img,
+.markdown-content-wrapper video,
+.markdown-content-wrapper iframe,
+.markdown-content-wrapper .resizable,
+.markdown-content-wrapper .flex-row {
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-preview h1 {
+    font-size: 2em;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.3em;
+}
+
+.markdown-preview h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.3em;
+}
+
+.markdown-preview p {
+    margin-bottom: 1em;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Preserves newlines like "Auto Formatting" */
+}
+
+/* Design Mode Drag & Drop Styles */
+.markdown-content-wrapper .draggable-block {
+    cursor: grab;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.markdown-content-wrapper .draggable-hover {
+    outline: 1px dashed var(--text-muted);
+    z-index: 10;
+}
+
+/* Drag handle styles */
+.custom-drag-handle:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal) !important;
+}
+
+/* Design Mode Cursor Styles */
+.design-mode-container {
+    cursor: default;
+}
+
+.design-mode-container p,
+.design-mode-container span,
+.design-mode-container h1,
+.design-mode-container h2,
+.design-mode-container h3,
+.design-mode-container h4,
+.design-mode-container h5,
+.design-mode-container h6,
+.design-mode-container li,
+.design-mode-container td,
+.design-mode-container th,
+.design-mode-container .callout-content,
+.design-mode-container .callout-title-inner,
+.design-mode-container code {
+    cursor: text;
+}
+
+.design-mode-container a {
+    cursor: pointer;
+}
+
+.design-mode-container img,
+.design-mode-container video {
+    cursor: pointer;
+}
+
+.design-mode-container .callout,
+.design-mode-container .code-block-wrapper,
+.design-mode-container table,
+.design-mode-container blockquote,
+.design-mode-container .flex-row {
+    cursor: grab;
+}
+
+.design-mode-container .callout-title {
+    cursor: pointer;
+}
+
+.design-mode-container .callout[data-collapsible="true"] .callout-title {
+    cursor: pointer;
+}
+
+.design-mode-container button,
+.design-mode-container .copy-code-btn {
+    cursor: pointer;
+}
+
+.markdown-content-wrapper .sortable-dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    cursor: grabbing !important;
+}
+
+.markdown-content-wrapper .sortable-drop-target {
+    background: rgba(var(--interactive-accent-rgb), 0.1);
+    outline: 2px dashed var(--interactive-accent) !important;
+    position: relative;
+}
+
+.markdown-content-wrapper .sortable-drop-target::before {
+    content: 'Swap';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--interactive-accent);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.markdown-preview a {
+    color: var(--interactive-accent);
+    text-decoration: none;
+}
+
+.markdown-preview a:hover {
+    text-decoration: underline;
+}
+
+.markdown-preview img {
+    max-width: 100%;
+    box-sizing: content-box;
+    background-color: var(--background-primary);
+}
+
+.markdown-preview code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 16px;
+    background-color: rgba(110, 118, 129, 0.4);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+}
+
+.markdown-preview pre {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: var(--background-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.markdown-preview pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+/* Language-specific code blocks */
+.markdown-preview code[class*="language-"] {
+    font-size: 16px !important;
+}
+
+.markdown-preview pre code {
+    font-size: 16px !important;
+}
+
+
+.markdown-preview blockquote {
+    padding: 0 1em;
+    color: var(--text-muted);
+    border-left: 0.25em solid var(--border-subtle);
+    margin: 0 0 16px 0;
+}
+
+.markdown-preview table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    width: max-content;
+    max-width: 100%;
+    display: block;
+    overflow: auto;
+}
+
+.markdown-preview table th,
+.markdown-preview table td {
+    padding: 6px 13px;
+    border: 1px solid var(--border-subtle);
+}
+
+.markdown-preview table tr:nth-child(2n) {
+    background-color: var(--background-secondary);
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+    padding-left: 2em;
+    margin-bottom: 16px;
+}
+
+.markdown-preview hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: var(--border-subtle);
+    border: 0;
+}
+
+/* Callout Styles */
+/* Callout Styles */
+.callout {
+    overflow: hidden;
+    margin: 1em 0;
+    border-radius: 4px;
+    border: none;
+    padding: 0;
+}
+
+.callout p {
+    margin: 0;
+}
+
+.callout-title {
+    padding: 16px; /* p-3 is approx 16px */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    line-height: normal;
+    color: inherit; /* Will inherit from specific class */
+    margin-bottom: 0;
+    user-select: none;
+    min-height: 24px;
+}
+
+.callout[data-collapsible="true"] .callout-title {
+    cursor: pointer;
+}
+
+.callout-icon {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    margin-right: 8px; /* me-2 */
+}
+
+.callout-title-inner {
+    flex: 1;
+    font-size: 18px; /* Matching cards.html */
+}
+
+.callout-fold {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+.callout.is-collapsed .callout-fold {
+    transform: rotate(-90deg);
+}
+
+.callout.is-collapsed .callout-content {
+    display: none;
+}
+
+.callout-content {
+    padding: 0 16px 16px 16px;
+    color: var(--text-normal);
+}
+
+.callout-content p {
+    margin-bottom: 8px;
+}
+.callout-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Callout List Styling */
+.callout-content ul,
+.callout-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.callout-content li {
+    margin-bottom: 4px;
+}
+
+
+/* --- CARD SPECIFIC STYLES (from cards.html) --- */
+
+/* INFO / NOTE (Sky Blue - unique) */
+.callout-info, .callout-note {
+    background-color: rgb(25, 40, 55);
+    --callout-color: 100, 181, 246;
+}
+.callout-info .callout-title, .callout-note .callout-title {
+    color: rgb(100, 181, 246);
+}
+
+/* IMPORTANT */
+.callout-important {
+    background-color: rgb(35, 50, 50);
+    --callout-color: 83, 223, 221;
+}
+.callout-important .callout-title {
+    color: rgb(83, 223, 221);
+}
+
+/* QUESTION / FAQ */
+.callout-question, .callout-help, .callout-faq {
+    background-color: rgb(51, 42, 33);
+    --callout-color: 233, 151, 63;
+}
+.callout-question .callout-title, .callout-help .callout-title, .callout-faq .callout-title {
+    color: rgb(233, 151, 63);
+}
+
+/* ERROR / FAIL */
+.callout-average, .callout-fail, .callout-failure, .callout-missing, .callout-danger, .callout-error, .callout-bug {
+    background-color: rgb(53, 34, 35);
+    --callout-color: 255, 0, 0;
+}
+.callout-error .callout-title, .callout-danger .callout-title, .callout-fail .callout-title, .callout-bug .callout-title {
+    color: rgb(255, 0, 0);
+}
+
+/* EXAMPLE */
+.callout-example {
+    background-color: rgb(44, 40, 53);
+    --callout-color: 168, 130, 255;
+}
+.callout-example .callout-title {
+    color: rgb(168, 130, 255);
+}
+
+/* TASK / TODO */
+.callout-todo, .callout-task, .callout-done, .callout-check, .callout-success {
+    background-color: rgb(52, 66, 0);
+    --callout-color: 217, 255, 81;
+}
+.callout-todo .callout-title, .callout-task .callout-title, .callout-success .callout-title {
+    color: rgb(217, 255, 81);
+}
+
+/* QUOTE / CITE */
+.callout-quote, .callout-cite {
+    background-color: rgba(158, 158, 158, 0.1);
+    --callout-color: 158, 158, 158;
+}
+.callout-quote .callout-title, .callout-cite .callout-title {
+    color: rgb(158, 158, 158);
+}
+
+/* TIP / HINT (Bright Green - unique) */
+.callout-tip, .callout-hint {
+    background-color: rgb(30, 50, 35);
+    --callout-color: 0, 200, 83;
+}
+.callout-tip .callout-title, .callout-hint .callout-title {
+    color: rgb(0, 200, 83);
+}
+
+/* WARNING / CAUTION / ATTENTION (Gold/Yellow - unique) */
+.callout-warning, .callout-caution, .callout-attention {
+    background-color: rgb(50, 45, 25);
+    --callout-color: 255, 214, 0;
+}
+.callout-warning .callout-title, .callout-caution .callout-title, .callout-attention .callout-title {
+    color: rgb(255, 214, 0);
+}
+
+/* Drag & Drop Visual Feedback */
+
+.draggable-block {
+    transition: margin-top 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+}
+
+/* Prevent auto-scroll during drag operations */
+.markdown-preview.design-mode {
+    overscroll-behavior: none;
+    scroll-behavior: auto;
+}
+
+.drop-zone-active {
+    background-color: rgba(68, 138, 255, 0.05);
+    outline: 2px dashed var(--interactive-accent);
+    outline-offset: -2px;
+}
+
+/* Ghost Preview Element */
+.drag-ghost {
+    opacity: 0.6;
+    transform: scale(0.98);
+    filter: grayscale(100%);
+    border: 2px dashed var(--interactive-accent);
+    background: rgba(var(--interactive-accent-rgb), 0.05);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    min-height: 50px;
+}
+
+/* Empty State Placeholder */
+/* Empty State Placeholder */
+.design-mode-container:empty::after,
+.design-mode-container:not(:has(> *:not(.drag-ghost)))::after {
+    content: '👋 Перетащите сюда шаблоны из меню справа, \A чтобы создать контент';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 180px;
+    text-align: center;
+    color: var(--text-muted);
+    border: 2px dashed var(--border-subtle);
+    border-radius: 8px;
+    margin: 10px 0;
+    background: rgba(var(--mono-rgb-100), 0.03);
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+.draggable-block {
+    transition: transform 0.2s ease;
+}
+
+/* Drop Indicator */
+.drop-indicator {
+    position: fixed;
+    background-color: var(--interactive-accent);
+    pointer-events: none;
+    z-index: 1000;
+    transition: all 0.05s ease;
+    box-shadow: 0 0 4px rgba(var(--interactive-accent-rgb), 0.5);
+    border-radius: 1px;
+}
+
+/* Smart Layout Utilities */
+.flex-row {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.flex-row > * {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Resize Handles for Design Mode */
+.resizable {
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Keep block elements as block - they will reflow naturally */
+.callout.resizable,
+.code-block-wrapper.resizable,
+table.resizable,
+blockquote.resizable,
+p.resizable,
+h1.resizable,
+h2.resizable,
+h3.resizable,
+h4.resizable,
+h5.resizable,
+h6.resizable,
+ul.resizable,
+ol.resizable,
+div.resizable {
+    display: block;
+}
+
+/* Images and videos can be inline-block for width control */
+img.resizable,
+video.resizable,
+.media-wrapper.resizable {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.media-wrapper {
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+    line-height: 0;
+}
+
+.media-wrapper img,
+.media-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--interactive-accent);
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+    pointer-events: none; /* Disable by default */
+    display: none; /* Hide by default */
+}
+
+/* Only enable resize handles INSIDE design-mode-container */
+.design-mode-container .resize-handle {
+    display: block;
+    pointer-events: all;
+}
+
+/* Show handles on hover - ONLY in design mode */
+.design-mode-container .resizable:hover .resize-handle,
+.design-mode-container .resizable.resizing .resize-handle {
+    opacity: 1;
+}
+
+.design-mode-container .resize-handle:hover {
+    transform: scale(1.2);
+    background: var(--interactive-accent);
+}
+
+.resize-handle.handle-nw {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+
+.resize-handle.handle-ne {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+}
+
+.resize-handle.handle-sw {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+}
+
+.resize-handle.handle-se {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+
+.resize-handle.handle-e {
+    top: 50%;
+    right: -5px;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    width: 8px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.resize-handle.handle-w {
+    top: 50%;
+    left: -5px;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    width: 8px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.resize-handle.handle-n {
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: 20px;
+    height: 8px;
+    border-radius: 4px;
+}
+
+.resize-handle.handle-s {
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: 20px;
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Highlight resizable elements on hover in design mode */
+.design-mode-container .resizable:hover {
+    outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+    outline-offset: 2px;
+}
+
+.design-mode-container .resizable.resizing {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+    user-select: none;
+}
+
+/* Ensure resized elements reflow properly */
+.design-mode-container .resizable {
+    vertical-align: top;
+    max-width: 100%;
+}
+
+/* --- GRID DASHBOARD --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-flow: dense;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.grid-cell {
+    grid-column: span 6;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--background-secondary);
+    border-radius: 8px;
+    min-height: 50px;
+    position: relative;
+    overflow: hidden; /* Чтобы контент не вылезал за закругленные края */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Если в ячейку добавлен коллаут, он заполняет её целиком */
+.grid-cell .callout {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* Растягиваем одиночные абзацы (часто оборачивают картинки) */
+.grid-cell > p:only-child {
+    margin: 0 !important;
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Растягиваем обертку медиа */
+.grid-cell .media-wrapper {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Изображения и видео растягиваются на всю ячейку */
+.grid-cell img,
+.grid-cell video,
+.grid-cell .media-wrapper img,
+.grid-cell .media-wrapper video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 0 !important;
+}
+
+/* В режиме чтения убираем очертания и фон у самой сетки */
+.read-mode-container .grid-cell {
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.grid-span-1 { grid-column: span 1; }
+.grid-span-2 { grid-column: span 2; }
+.grid-span-3 { grid-column: span 3; }
+.grid-span-4 { grid-column: span 4; }
+.grid-span-5 { grid-column: span 5; }
+.grid-span-6 { grid-column: span 6; }
+.grid-span-7 { grid-column: span 7; }
+.grid-span-8 { grid-column: span 8; }
+.grid-span-9 { grid-column: span 9; }
+.grid-span-10 { grid-column: span 10; }
+.grid-span-11 { grid-column: span 11; }
+.grid-span-12 { grid-column: span 12; }
+
+.grid-row-1 { grid-row: span 1; }
+.grid-row-2 { grid-row: span 2; }
+.grid-row-3 { grid-row: span 3; }
+.grid-row-4 { grid-row: span 4; }
+
+.design-mode-container .grid-cell {
+    min-height: 100px;
+    outline: 1px dashed transparent;
+    outline-offset: -1px;
+}
+
+.design-mode-container .grid-cell:hover {
+    outline-color: var(--interactive-accent);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.design-mode-container .grid-cell:empty::before {
+    content: "Перетащите сюда элементы...";
+    color: var(--text-muted);
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.selected-block { outline: 2px solid var(--interactive-accent); outline-offset: -2px; z-index: 10; position: relative; }
+
+
+/* Отключаем нижний отступ для вложенной сетки внутри ячейки */
+.grid-cell > .dashboard-grid:last-child {
+    margin-bottom: 0;
+}

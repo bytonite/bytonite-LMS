@@ -1,0 +1,199 @@
+
+.properties-panel {
+    background-color: var(--background-secondary);
+    border-left: 1px solid var(--border-subtle);
+    width: 280px; /* Slightly wider for better inputs */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
+    padding-bottom: 20px;
+}
+
+.properties-panel.empty {
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tag-name {
+    background-color: var(--interactive-accent);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    opacity: 0.9;
+}
+
+.panel-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.panel-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.control-group {
+    margin-bottom: 12px;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* Inputs & Selects */
+.properties-panel input[type="text"],
+.properties-panel input[type="number"],
+.properties-panel select {
+    width: 100%;
+    background-color: var(--background-primary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-normal);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.properties-panel input:focus,
+.properties-panel select:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+}
+
+/* Input Row (for Width/Height side-by-side) */
+.input-row {
+    display: flex;
+    gap: 10px;
+}
+
+.input-row .control-group {
+    flex: 1;
+}
+
+/* Button Groups (Icons) */
+.btn-group {
+    display: flex;
+    background-color: var(--background-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.btn-group button {
+    flex: 1;
+    background: none;
+    border: none;
+    border-right: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-group button:last-child {
+    border-right: none;
+}
+
+.btn-group button:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: var(--text-normal);
+}
+
+.btn-group button.active {
+    background-color: var(--interactive-accent);
+    color: white;
+}
+
+/* Color Picker Wrapper */
+.color-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--border-subtle);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.properites-panel input[type="color"] {
+    -webkit-appearance: none;
+    border: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.properties-panel input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.properties-panel input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+}
+
+.color-value {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.sm-btn {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    border-radius: 3px;
+    margin-top: 4px;
+    cursor: pointer;
+}
+
+.sm-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text-normal);
+}
