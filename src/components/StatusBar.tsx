@@ -29,13 +29,13 @@ export default function StatusBar({ wordCount, charCount, line, column, contentW
 
     return (
         <div style={{
-            height: '24px',
+            height: '32px',
             backgroundColor: 'var(--background-secondary)',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             padding: '0 10px',
-            fontSize: '11px',
+            fontSize: '13px',
             color: 'var(--text-muted)',
             gap: '16px',
             userSelect: 'none'
@@ -68,9 +68,9 @@ export default function StatusBar({ wordCount, charCount, line, column, contentW
                             title={p.title}
                             onClick={() => onWidthChange(p.value)}
                             style={{
-                                width: '18px',
-                                height: '16px',
-                                fontSize: '9px',
+                                width: '24px',
+                                height: '20px',
+                                fontSize: '11px',
                                 fontWeight: contentWidth === p.value ? 600 : 400,
                                 border: 'none',
                                 borderRadius: '3px',
@@ -101,7 +101,7 @@ export default function StatusBar({ wordCount, charCount, line, column, contentW
                     value={contentWidth}
                     onChange={(e) => onWidthChange(Number(e.target.value))}
                     style={{ 
-                        width: '60px', 
+                        width: '200px', 
                         height: '14px',
                         accentColor: 'var(--interactive-accent)',
                         cursor: 'ew-resize'
@@ -113,7 +113,7 @@ export default function StatusBar({ wordCount, charCount, line, column, contentW
                     minWidth: '42px', 
                     textAlign: 'right',
                     fontFamily: 'monospace',
-                    fontSize: '10px'
+                    fontSize: '12px'
                 }}>
                     {contentWidth >= 1600 ? '100%' : `${contentWidth}px`}
                 </span>

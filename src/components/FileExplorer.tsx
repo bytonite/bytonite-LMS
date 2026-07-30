@@ -425,9 +425,8 @@ export default function FileExplorer({ rootPath, onFileSelect, pinnedFiles, onTo
             {pinnedFiles.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ 
-                        fontWeight: 'bold', 
-                        marginBottom: 6, 
-                        fontSize: '11px', 
+                        marginBottom: '8px', 
+                        fontSize: '12px', 
                         color: 'var(--text-muted)',
                         textTransform: 'uppercase' 
                     }}>
@@ -456,21 +455,21 @@ export default function FileExplorer({ rootPath, onFileSelect, pinnedFiles, onTo
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ fontWeight: 'bold' }}>FILES</div>
+                <div style={{ fontWeight: 'bold', fontSize: '13px' }}>FILES</div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <div 
                         onClick={() => handleNewFile(rootPath)}
                         title="Новый файл"
                         style={{ cursor: 'pointer', opacity: 0.7, display: 'flex' }}
                     >
-                        <FilePlus size={16} />
+                        <FilePlus size={20} />
                     </div>
                     <div 
                         onClick={() => handleNewFolder(rootPath)}
                         title="Новая папка"
                         style={{ cursor: 'pointer', opacity: 0.7, display: 'flex' }}
                     >
-                        <FolderPlus size={16} />
+                        <FolderPlus size={20} />
                     </div>
                 </div>
             </div>

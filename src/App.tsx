@@ -11,7 +11,7 @@ import PinModal from './components/PinModal';
 import TemplateSidebar from './components/TemplateSidebar';
 import PropertiesPanel from './components/PropertiesPanel';
 import MediaViewer from './components/MediaViewer';
-import { Sun, Moon, FileText, Eye, PenLine, FolderOpen, ExternalLink, Lock, Layout, Columns } from 'lucide-react';
+import { Sun, Moon, FileText, Eye, PenLine, FolderOpen, ExternalLink, Lock, Layout, Columns, PanelLeft } from 'lucide-react';
 
 
 
@@ -59,9 +59,46 @@ function App() {
   const activeFile = openFiles.find(f => f.path === activeFilePath);
 
   const [designMode, setDesignMode] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(250);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<HTMLElement[]>([]);
   const [activeSourcePos, setActiveSourcePos] = useState<string | null>(null);
   const previewSaveRef = useRef<(() => string) | null>(null);
+
+  const handleSidebarMouseDown = (e: React.MouseEvent) => {
+    setIsResizingSidebar(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingSidebar) return;
+      const newWidth = Math.max(150, Math.min(e.clientX, 800));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    if (isResizingSidebar) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingSidebar]);
 
   // Clear selection when exiting design mode
   useEffect(() => {
@@ -72,12 +109,6 @@ function App() {
       // Save content if coming from Design Mode
       if (designMode) {
           const content = previewSaveRef.current?.();
-          // activeFile is stable here due to useState/render scope, 
-          // but let's re-find it to be safe or use activeFile ref if needed.
-          // Actually activeFile variable is derived from openFiles state which matches closure.
-          // However, if we are in a stale closure (e.g. event listener), activeFile might be old.
-          // BUT check dependency array of useEffect below -> [designMode, activeFile].
-          // So handleKeyDown reconstructs on activeFile change. It should be fine.
           if (content && activeFile) {
               handleContentChange(content);
           }
@@ -344,15 +375,24 @@ function App() {
   return (
     <>
       <div className="title-bar">
-        <span>Obsidian Clone - {activeFile ? getBasename(activeFile.path) : 'Untitled'}</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={() => setSidebarVisible(!sidebarVisible)} 
+            title="Переключить боковую панель" 
+            className={`header-button ${sidebarVisible ? 'active' : ''}`}
+          >
+            <PanelLeft size={22} />
+          </button>
+          <div className="header-title">Obsidian Clone - {activeFile ? getBasename(activeFile.path) : 'Untitled'}</div>
+        </div>
+        <div className="header-actions" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', alignItems: 'center' }}>
           {/* File Operations Group */}
           <div className="button-group">
             <button onClick={handleOpenVault} title="Открыть папку (Vault)" className="header-button">
-              <FolderOpen size={16} />
+              <FolderOpen size={22} />
             </button>
             <button onClick={() => { loadTemplates(); setTemplatePaletteOpen(true); }} title="Вставить шаблон" className="header-button">
-              <FileText size={16} />
+              <FileText size={22} />
             </button>
           </div>
 
@@ -361,7 +401,7 @@ function App() {
           {/* View Mode Group */}
           {!isUnlocked ? (
                <button onClick={() => { setPinModalPurpose('edit'); setPinModalOpen(true); }} title="Разблокировать редактирование" className="header-button">
-                  <Lock size={16} />
+                  <Lock size={22} />
                </button>
           ) : (
              <div className="button-group">
@@ -374,7 +414,7 @@ function App() {
                     title="Режим чтения" 
                     className={`header-button ${viewMode === 'preview' && !designMode ? 'active' : ''}`}
                 >
-                    <Eye size={16} />
+                    <Eye size={22} />
                 </button>
                 <button 
                     onClick={() => { 
@@ -386,7 +426,7 @@ function App() {
                     title="Визуальный редактор (Design Mode)" 
                     className={`header-button ${designMode ? 'active' : ''}`}
                 >
-                    <Layout size={16} />
+                    <Layout size={22} />
                 </button>
                 <button 
                     onClick={() => { 
@@ -396,7 +436,7 @@ function App() {
                     title="Редактор кода (Source)" 
                     className={`header-button ${viewMode === 'edit' ? 'active' : ''}`}
                 >
-                    <PenLine size={16} />
+                    <PenLine size={22} />
                 </button>
                 <button 
                     onClick={() => { 
@@ -406,7 +446,7 @@ function App() {
                     title="Разделенный экран (Live Preview)" 
                     className={`header-button ${viewMode === 'split' ? 'active' : ''}`}
                 >
-                    <Columns size={16} />
+                    <Columns size={22} />
                 </button>
              </div>
           )}
@@ -417,11 +457,11 @@ function App() {
           <div className="button-group">
             {theme === 'dark' ? (
               <button onClick={() => setTheme('light')} title="Светлая тема" className="header-button">
-                  <Sun size={16} />
+                  <Sun size={22} />
               </button>
             ) : (
               <button onClick={() => setTheme('dark')} title="Темная тема" className="header-button">
-                  <Moon size={16} />
+                  <Moon size={22} />
               </button>
             )}
             <button 
@@ -429,14 +469,16 @@ function App() {
               title={openLinksInNewTab ? "Ссылки открываются в новой вкладке" : "Ссылки открываются в текущей вкладке"}
               className={`header-button ${openLinksInNewTab ? 'active' : ''}`}
             >
-              <ExternalLink size={16} />
+              <ExternalLink size={22} />
             </button>
           </div>
         </div>
       </div>
       <div className="split-layout">
-        <aside className="sidebar">
-          {rootPath && <FileExplorer 
+        {sidebarVisible && (
+          <>
+            <aside className="sidebar" style={{ width: `${sidebarWidth}px` }}>
+              {rootPath && <FileExplorer 
             key={refreshKey} 
             rootPath={rootPath} 
             onFileSelect={handleFileSelect} 
@@ -451,7 +493,13 @@ function App() {
             externalQuery={searchQuery}
             onQueryChange={setSearchQuery}
           />}
-        </aside>
+            </aside>
+            <div 
+              className="sidebar-resizer" 
+              onMouseDown={handleSidebarMouseDown}
+            />
+          </>
+        )}
         <TemplateSidebar visible={viewMode === 'preview' && designMode} rootPath={rootPath} />
         <main className="editor-container">
           {openFiles.length > 0 && (

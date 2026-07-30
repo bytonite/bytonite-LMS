@@ -163,6 +163,7 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
     const onChangeRef = useRef(onChange);
     const onStatsUpdateRef = useRef(onStatsUpdate);
     const themeCompartment = useRef(new Compartment());
+    const isSyncingRef = useRef(false);
 
     // Keep refs updated
     useEffect(() => {
@@ -337,9 +338,30 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
                             });
                         }
 
-                        if (onSelectSourcePos) {
-                            // If the selection is a range, we could pass it all, but for now just pass the head line
-                            onSelectSourcePos(`${line.number}`);
+                        // Only notify Preview if the selection change was caused by the user (not a programmatic sync)
+                        const isUserEvent = update.transactions.some(tr => {
+                            const isUser = tr.isUserEvent('select') || 
+                                         tr.isUserEvent('input') || 
+                                         tr.isUserEvent('delete') || 
+                                         tr.isUserEvent('undo') || 
+                                         tr.isUserEvent('redo');
+                            return isUser;
+                        });
+                        
+                        // We use a ref (isSyncingRef) to ensure programmatic syncs from Preview don't bounce back.
+                        // We relax the hasFocus requirement because clicks outside the editor can trigger selection events
+                        // but they are still user-initiated.
+                        if (onSelectSourcePos && isUserEvent && !isSyncingRef.current) {
+                            // Check if the sourcePos being set is already matching this line to avoid feedback loops
+                            const currentLineNum = String(line.number);
+                            const activeSourceLine = activeSourcePos ? activeSourcePos.split(':')[0] : null;
+                            if (currentLineNum !== activeSourceLine) {
+                                console.log("Editor is firing onSelectSourcePos due to userEvent!", {
+                                    line: line.number,
+                                    isSyncing: isSyncingRef.current
+                                });
+                                onSelectSourcePos(currentLineNum);
+                            }
                         }
                     }
                 })
@@ -358,25 +380,37 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
         };
     }, []);
 
+    // Handle external sourcePos changes (e.g. from Preview clicks)
     useEffect(() => {
-        if (!viewRef.current || !activeSourcePos) return;
-        
-        const view = viewRef.current;
-        const lineMatch = activeSourcePos.match(/^(\d+)/);
-        if (!lineMatch) return;
-        const targetLineNumber = parseInt(lineMatch[1], 10);
+        if (!activeSourcePos || !viewRef.current) return;
         
         try {
-            const currentLine = view.state.doc.lineAt(view.state.selection.main.head);
-            if (currentLine.number === targetLineNumber) return; // Already there
-
-            const targetLine = view.state.doc.line(targetLineNumber);
-            view.dispatch({
-                selection: { anchor: targetLine.from },
-                effects: EditorView.scrollIntoView(targetLine.from, { y: 'center' })
-            });
+            const startLine = parseInt(activeSourcePos.split(':')[0]);
+            if (isNaN(startLine)) return;
+            
+            // Apply line highlight in editor
+            const view = viewRef.current;
+            const line = view.state.doc.line(Math.min(startLine, view.state.doc.lines));
+            
+            // Move cursor ONLY if the selection is far away from the line
+            // This prevents fighting with manual typing
+            const currentHead = view.state.selection.main.head;
+            const currentLine = view.state.doc.lineAt(currentHead);
+            
+            isSyncingRef.current = true;
+            if (currentLine.number !== line.number) {
+                view.dispatch({
+                    selection: { anchor: line.from, head: line.from },
+                    effects: EditorView.scrollIntoView(line.from, { y: 'center' })
+                });
+            }
+            // Add a tiny delay or use requestAnimationFrame to make sure the update cycles complete before resetting isSyncingRef
+            setTimeout(() => {
+                isSyncingRef.current = false;
+            }, 50);
         } catch (e) {
-            // Ignore if out of bounds
+            console.error('Error syncing editor to source pos:', e);
+            isSyncingRef.current = false;
         }
     }, [activeSourcePos]);
 

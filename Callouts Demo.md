@@ -16,6 +16,4 @@
 
 <div class="callout callout-warning" style="--callout-color: 255, 152, 0; position: relative;"><div class="callout-title"><div class="callout-icon"><svg width="1em" height="1em" viewBox="0 0 448 512" fill="currentColor"><path d="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288H175.5L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7H272.5L349.4 44.6z"></path></svg></div><div class="callout-title-inner">Warning callout</div></div></div>
 
-```python
-print("hello");
-```
+<pre><div class="code-block-wrapper" data-language="python" style="position: relative;"><div class="code-block-content">print("hello");</div></div></pre>

@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import './Preview.css';
 import { Copy, Check, ChevronDown } from 'lucide-react';
-import { useState, useEffect, useRef, Children, isValidElement } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, Children, isValidElement } from 'react';
 import { normalizePath, getBasename } from '../utils/path';
 import React from 'react';
 import TurndownService from 'turndown';
@@ -21,6 +21,8 @@ function rehypeSourceLine() {
     });
   };
 }
+
+// removed remarkInjectSourcePos
 
 // Fix paths to assets if they point to old directory
 const fixPaths = (content: string, rootPath: string): string => {
@@ -1348,26 +1350,34 @@ const Callout = ({ children }: any) => {
     const fixedContent = fixPaths(content, _rootPath || '');
     
     // We use the prop 'selectedBlock' if available, otherwise we could track locally but App.tsx handles it now.
-    // const [selectedBlock, setSelectedBlock] = useState<HTMLElement | null>(null); 
+// const [selectedBlock, setSelectedBlock] = useState<HTMLElement | null>(null);
 
+    // Keep activeSourcePos in a ref so we can always access the latest value
+    // without it being a stale closure issue inside layout effects
+    const activeSourcePosRef = useRef<string | null | undefined>(activeSourcePos);
+    activeSourcePosRef.current = activeSourcePos;
+
+    // Track whether we need to scroll on the next highlight application
+    const needsScrollRef = useRef<boolean>(false);
+
+    // When activeSourcePos changes (new click from editor or preview), mark that we need scroll
     useEffect(() => {
-        if (!previewRef.current || !activeSourcePos) {
-            if (previewRef.current) {
-                previewRef.current.querySelectorAll('.live-highlight').forEach(el => el.classList.remove('live-highlight'));
-            }
-            return;
-        }
-        
-        const lineStr = activeSourcePos.split('-')[0];
-        const line = parseInt(lineStr, 10);
-        if (isNaN(line)) return;
+        needsScrollRef.current = true;
+    }, [activeSourcePos]);
 
-        const elements = Array.from(previewRef.current.querySelectorAll('[data-sourcepos]'));
-        elements.forEach(el => el.classList.remove('live-highlight'));
+    // Helper: find best element for a given sourcePos string
+    const findBestElement = (root: HTMLElement, sourcePos: string): Element | null => {
+        // 1. Try exact match first
+        let best = root.querySelector(`[data-sourcepos="${sourcePos}"]`);
+        if (best) return best;
 
-        let bestElement: Element | null = null;
+        // 2. Fallback to line range logic
+        const lineStr = sourcePos.split('-')[0];
+        const line = parseInt(lineStr.split(':')[0] || lineStr, 10);
+        if (isNaN(line)) return null;
+
         let bestRangeSize = Infinity;
-
+        const elements = root.querySelectorAll('[data-sourcepos]');
         for (const el of elements) {
             const pos = (el as HTMLElement).dataset.sourcepos;
             if (!pos) continue;
@@ -1375,22 +1385,42 @@ const Callout = ({ children }: any) => {
             if (match) {
                 const startLine = parseInt(match[1], 10);
                 const endLine = parseInt(match[2], 10);
-                
                 if (line >= startLine && line <= endLine) {
                     const rangeSize = endLine - startLine;
-                    if (rangeSize <= bestRangeSize) {
+                    if (rangeSize < bestRangeSize) {
                         bestRangeSize = rangeSize;
-                        bestElement = el;
+                        best = el;
                     }
                 }
             }
         }
+        return best;
+    };
 
+    // useLayoutEffect runs synchronously after every DOM paint.
+    // This means even if ReactMarkdown recreates the DOM, we ALWAYS re-apply the highlight.
+    // We use activeSourcePosRef.current instead of activeSourcePos to avoid needing
+    // it as a dependency (which would cause issues) — the ref is always up-to-date.
+    useLayoutEffect(() => {
+        if (!previewRef.current || designMode) return;
+        const pos = activeSourcePosRef.current;
+
+        // Remove all existing highlights
+        previewRef.current.querySelectorAll('.live-highlight').forEach(el => {
+            el.classList.remove('live-highlight');
+        });
+
+        if (!pos) return;
+
+        const bestElement = findBestElement(previewRef.current, pos);
         if (bestElement) {
             bestElement.classList.add('live-highlight');
-            bestElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (needsScrollRef.current) {
+                needsScrollRef.current = false;
+                bestElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
-    }, [activeSourcePos, content]);
+    });
     
     const selectedBlocksRef = useRef<HTMLElement[]>([]);
     useEffect(() => {
@@ -1536,8 +1566,10 @@ const Callout = ({ children }: any) => {
             if (!designMode) {
                 // In Preview mode, just find the closest element with data-sourcepos and sync
                 const blockElement = target.closest('[data-sourcepos]');
+                console.log("Clicked preview element:", target, "Found data-sourcepos element:", blockElement);
                 if (blockElement && onSelectSourcePos) {
                     const sourcePos = blockElement.getAttribute('data-sourcepos');
+                    console.log("Found sourcePos:", sourcePos);
                     if (sourcePos) {
                         e.stopPropagation();
                         onSelectSourcePos(sourcePos);
@@ -1999,7 +2031,7 @@ const Callout = ({ children }: any) => {
                     />
                 )}
 
-                <div ref={previewRef} style={{ display: designMode ? 'none' : 'block' }}>
+                <div ref={previewRef} style={{ display: designMode ? 'none' : 'block' }} onClick={handleBlockClick}>
                     <ReactMarkdown 
                         remarkPlugins={[remarkGfm]} 
                         rehypePlugins={[rehypeRaw, rehypeSourceLine]}
