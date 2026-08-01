@@ -563,13 +563,21 @@ video.resizable,
 /* Only enable resize handles INSIDE design-mode-container */
 .design-mode-container .resize-handle {
     display: block;
-    pointer-events: all;
+    pointer-events: none; /* Disable pointer events when invisible to prevent overlap clicks */
 }
 
-/* Show handles on hover - ONLY in design mode */
-.design-mode-container .resizable:hover .resize-handle,
-.design-mode-container .resizable.resizing .resize-handle {
+/* Show handles on hover - ONLY in design mode. 
+   Use direct child selector so only the hovered element's own handles are shown */
+.design-mode-container .resizable:hover > .resize-handle,
+.design-mode-container .resizable.resizing > .resize-handle {
     opacity: 1;
+    pointer-events: all; /* Enable pointer events only when visible */
+}
+
+/* If a nested resizable is being hovered, don't show the parent's handles */
+.design-mode-container .resizable:not(.resizing):hover:has(.resizable:hover) > .resize-handle {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 .design-mode-container .resize-handle:hover {
@@ -645,6 +653,11 @@ video.resizable,
 .design-mode-container .resizable:hover {
     outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
     outline-offset: 2px;
+}
+
+/* Remove outline from parent if a nested resizable is hovered */
+.design-mode-container .resizable:not(.resizing):hover:has(.resizable:hover) {
+    outline: none !important;
 }
 
 .design-mode-container .resizable.resizing {
