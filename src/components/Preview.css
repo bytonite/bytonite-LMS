@@ -762,18 +762,43 @@ video.resizable,
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
-.selected-block { outline: 2px solid var(--interactive-accent) !important; outline-offset: -2px; z-index: 10; position: relative; }
+/* --- Исправление отступов для вложенных сеток (Design Mode + Reading Mode) --- */
 
+/* Сбрасываем margin-bottom у любой сетки, находящейся внутри ячейки */
+.grid-cell .dashboard-grid {
+    margin-bottom: 0 !important;
+}
 
-/* Отключаем нижний отступ для вложенной сетки внутри ячейки */
-.grid-cell > .dashboard-grid:last-child {
+/* Если ReactMarkdown обернул вложенную сетку в <p>, убираем отступ у этого <p> */
+.grid-cell > p:has(> .dashboard-grid) {
+    margin-bottom: 0 !important;
+}
+
+/* Убираем отступ у самого последнего параграфа в ячейке */
+.grid-cell > p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* В Design Mode браузер может вставлять пустые <p> и <br> внутри contenteditable.
+   Скрываем их и убираем margin/padding, чтобы они не добавляли высоту ячейкам */
+.design-mode-container .grid-cell > p:empty,
+.design-mode-container .grid-cell > br {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    line-height: 0 !important;
+}
+
+/* Если p содержит только nbsp - это тоже пустая строка, мы можем хотя бы обнулить margin */
+.design-mode-container .grid-cell > p {
     margin-bottom: 0;
 }
 
-/* Вложенная сетка внутри ячейки — убираем margin-bottom всегда */
-.grid-cell > .dashboard-grid {
-    margin-bottom: 0 !important;
-}
+.selected-block { outline: 2px solid var(--interactive-accent) !important; outline-offset: -2px; z-index: 10; position: relative; }
+
+
+
 
 /* В Design Mode браузер вставляет пустые <p> и <br> после элементов внутри contenteditable.
    Обнуляем их margin/padding и скрываем пустые br-заглушки */
