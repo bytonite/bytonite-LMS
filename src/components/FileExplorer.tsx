@@ -25,10 +25,12 @@ const HIDDEN_DIRS = new Set([
     'src', 'electron', 'dist-electron', 'public' // Hide source folders as requested
 ]);
 
-const HIDDEN_EXTS = new Set([
-    '.js', '.jsx', '.ts', '.tsx', '.d.ts', 
-    '.html', '.css', '.scss', '.sass', '.less',
-    '.json', '.map', '.lock', '.yml', '.yaml', '.xml', '.config.js', '.config.ts'
+const ALLOWED_EXTS = new Set([
+    '.md',
+    // Images
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg',
+    // Videos
+    '.mp4', '.webm', '.ogv', '.mkv', '.avi', '.mov'
 ]);
 
 const shouldShowEntry = (entry: FileEntry) => {
@@ -39,10 +41,10 @@ const shouldShowEntry = (entry: FileEntry) => {
     }
     
     const extIndex = entry.name.lastIndexOf('.');
-    if (extIndex === -1) return true; // No extension (e.g. LICENSE) -> show
+    if (extIndex === -1) return false; // Hide files without extensions
     
     const ext = entry.name.slice(extIndex).toLowerCase();
-    return !HIDDEN_EXTS.has(ext);
+    return ALLOWED_EXTS.has(ext);
 };
 
 const FileNode = ({ entry, onSelect, level, onContextMenu, pinned, activeFilePath, expandedFolders, onToggleExpand, childrenCache, onUpdateChildren }: { 

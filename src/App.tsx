@@ -209,7 +209,7 @@ function App() {
       for (const entry of entries) {
         if (entry.isDirectory) {
           files.push(...await collectFiles(entry.path));
-        } else if (entry.name.match(/\.(md|png|jpg|jpeg|gif|bmp|webp|svg|mp4|webm|ogv|mkv)$/i)) {
+        } else if (entry.name.match(/\.(md|png|jpg|jpeg|gif|bmp|webp|svg|mp4|webm|ogv|mkv|avi|mov)$/i)) {
           files.push(entry.path);
         }
       }

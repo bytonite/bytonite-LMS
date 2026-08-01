@@ -125,8 +125,11 @@ $pkgPath = Join-Path $ProjectRoot "package.json"
 if (Test-Path $pkgPath) {
     $pkg = Get-Content $pkgPath -Raw -Encoding UTF8
     $pkg = [regex]::Replace($pkg, '"version":\s*"[^"]*"', """version"": ""$major.$newMinor.0""")
-    Set-Content -Path $pkgPath -Value $pkg -Encoding UTF8 -NoNewline
-    Write-Host "package.json obnovlen: versija -> $major.$newMinor.0" -ForegroundColor Green
+    
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($pkgPath, $pkg, $utf8NoBom)
+    
+    Write-Host "package.json obnovlen: versija -> $major.$newMinor.0 (UTF-8 no BOM)" -ForegroundColor Green
 }
 
 # ─── 8. Добавляем запись в CHANGELOG.md ──────────────────────────────────────
