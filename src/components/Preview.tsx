@@ -569,6 +569,9 @@ const Callout = ({ children }: any) => {
             el.classList.remove('live-highlight');
         });
 
+        // В чистом режиме чтения (нет редактора кода) выделение не показываем
+        if (!hasEditor) return;
+
         const pos = activeSourcePosRef.current;
         if (!pos) return;
 
