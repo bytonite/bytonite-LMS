@@ -7,9 +7,42 @@ import './Preview.css';
 import { Copy, Check, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useLayoutEffect, useRef, Children, isValidElement } from 'react';
 import { normalizePath, getBasename } from '../utils/path';
-import React from 'react';
+import { setupResize } from '../hooks/useResize';
+import { setupDragAndDrop } from '../hooks/useDragAndDrop';
+import { setupInteractions } from '../hooks/useInteractions';
 import TurndownService from 'turndown';
 import { visit } from 'unist-util-visit';
+
+// ─── Module-level constants (shared across components) ────────────────────────
+
+/** Maps short language aliases to Prism language names */
+const LANG_MAP: Record<string, string> = {
+    'js': 'javascript', 'ts': 'typescript', 'py': 'python',
+    'htm': 'markup', 'html': 'markup', 'xml': 'markup',
+    'svg': 'markup', 'sh': 'bash', 'bash': 'bash', 'shell': 'bash',
+    'c++': 'cpp', 'c#': 'csharp'
+};
+
+/** Callout type → accent color */
+const CALLOUT_COLOR_MAP: Record<string, string> = {
+    abstract: '#00bfa5', summary: '#00bfa5', tldr: '#00bfa5',
+    info: '#448aff', todo: '#448aff', note: '#448aff',
+    tip: '#00bfa5', hint: '#00bfa5', important: '#00bfa5',
+    success: '#00c853', check: '#00c853', done: '#00c853',
+    question: '#ff9800', help: '#ff9800', faq: '#ff9800',
+    warning: '#ff9800', caution: '#ff9800', attention: '#ff9800',
+    failure: '#e91e63', fail: '#e91e63', missing: '#e91e63',
+    danger: '#e91e63', error: '#e91e63', bug: '#e91e63',
+    example: '#00c853', quote: '#9e9e9e', cite: '#9e9e9e'
+};
+
+/** Convert hex color to "r, g, b" string for CSS custom properties */
+const hexToRgb = (hex: string): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+        ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+        : '68, 138, 255';
+};
 
 function rehypeSourceLine() {
   return (tree: any) => {
@@ -239,19 +272,8 @@ const Callout = ({ children }: any) => {
     };
 
     const IconElement = svgIcons[type] || svgIcons.note;
-    const colorMap: Record<string, string> = {
-        abstract: '#00bfa5', summary: '#00bfa5', tldr: '#00bfa5', info: '#448aff', todo: '#448aff', note: '#448aff',
-        tip: '#00bfa5', hint: '#00bfa5', important: '#00bfa5', success: '#00c853', check: '#00c853', done: '#00c853',
-        question: '#ff9800', help: '#ff9800', faq: '#ff9800', warning: '#ff9800', caution: '#ff9800', attention: '#ff9800',
-        failure: '#e91e63', fail: '#e91e63', missing: '#e91e63', danger: '#e91e63', error: '#e91e63', bug: '#e91e63',
-        example: '#00c853', quote: '#9e9e9e', cite: '#9e9e9e'
-    };
     
-    const color = colorMap[type] || '#448aff';
-    const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '68, 138, 255';
-    };
+    const color = CALLOUT_COLOR_MAP[type] || '#448aff';
     const rgbColor = hexToRgb(color);
 
     return (
@@ -286,16 +308,27 @@ const Callout = ({ children }: any) => {
     );
 };
 
+    // Shared code-block header: language label + copy button
+    const CodeBlockHeader = ({ language, onCopy, copied }: { language: string; onCopy: () => void; copied: boolean }) => (
+        <div className="code-block-header" style={{
+            position: 'absolute', top: '0', right: '0', display: 'flex', alignItems: 'center',
+            backgroundColor: '#2d2d2d', borderBottomLeftRadius: '4px', borderTopRightRadius: '4px',
+            zIndex: 10, overflow: 'hidden', userSelect: 'none'
+        }}>
+            <div style={{ padding: '4px 8px', fontSize: '12px', fontFamily: 'monospace', color: '#858585', textTransform: 'uppercase', pointerEvents: 'none', borderRight: '1px solid #3e3e3e' }}>
+                {language === 'markup' ? 'html' : (language || 'code')}
+            </div>
+            <button className="copy-code-btn" onClick={onCopy} style={{ background: 'transparent', border: 'none', color: copied ? '#4ade80' : '#b0b0b0', cursor: 'pointer', padding: '4px 8px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} title="Копировать код">
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+        </div>
+    );
+
     const CodeBlock = ({ children, className, node, ...rest }: any) => {
         const [copied, setCopied] = useState(false);
-        // Sanitize rest props to ensure no objects specific to AST are passed to DOM
         const safeProps = sanitizeProps(rest);
 
         const match = /language-(\w+)/.exec(className || '');
-        const langMap: Record<string, string> = {
-            'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'htm': 'markup', 'html': 'markup', 'xml': 'markup',
-            'svg': 'markup', 'сыы': 'css', 'sh': 'bash', 'bash': 'bash', 'shell': 'bash', 'c++': 'cpp', 'c#': 'csharp'
-        };
 
         const getRecursiveContent = (node: any): string => {
              if (!node) return '';
@@ -303,14 +336,14 @@ const Callout = ({ children }: any) => {
              if (typeof node === 'number') return String(node);
              if (Array.isArray(node)) return node.map(getRecursiveContent).join('');
              if (node.props && node.props.children) return getRecursiveContent(node.props.children);
-             return ''; 
+             return '';
         };
 
         const contentStr = getRecursiveContent(children).replace(/\n$/, '');
         let language = match ? match[1].toLowerCase() : '';
         const trimmed = contentStr.trim();
         if (trimmed.startsWith('<!DOCTYPE html>') || trimmed.startsWith('<html') || trimmed.startsWith('<?xml')) language = 'markup';
-        if (langMap[language]) language = langMap[language];
+        if (LANG_MAP[language]) language = LANG_MAP[language];
         const shouldUseHighlighter = !!language;
 
         const handleCopy = async () => {
@@ -323,18 +356,7 @@ const Callout = ({ children }: any) => {
 
         return shouldUseHighlighter ? (
             <div style={{ position: 'relative' }} className="code-block-wrapper" data-language={language}>
-                <div className="code-block-header" style={{
-                    position: 'absolute', top: '0', right: '0', display: 'flex', alignItems: 'center',
-                    backgroundColor: '#2d2d2d', borderBottomLeftRadius: '4px', borderTopRightRadius: '4px',
-                    zIndex: 10, overflow: 'hidden', userSelect: 'none'
-                }}>
-                    <div style={{ padding: '4px 8px', fontSize: '12px', fontFamily: 'monospace', color: '#858585', textTransform: 'uppercase', pointerEvents: 'none', borderRight: '1px solid #3e3e3e' }}>
-                        {language === 'markup' ? 'html' : language}
-                    </div>
-                    <button className="copy-code-btn" onClick={handleCopy} style={{ background: 'transparent', border: 'none', color: copied ? '#4ade80' : '#b0b0b0', cursor: 'pointer', padding: '4px 8px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} title="Копировать код">
-                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                    </button>
-                </div>
+                <CodeBlockHeader language={language} onCopy={handleCopy} copied={copied} />
                 <div className="code-block-content">
                     <SyntaxHighlighter {...safeProps} PreTag="div" children={contentStr} language={language} style={vscDarkPlus} customStyle={{ background: '#252526', borderRadius: '4px', padding: '8px', margin: '0', fontSize: '16px', whiteSpace: 'pre' }} />
                 </div>
@@ -347,44 +369,21 @@ const Callout = ({ children }: any) => {
     // Component for rendering code blocks from saved HTML (with copy animation)
     const HtmlCodeBlock = ({ codeContent, language }: { codeContent: string; language: string }) => {
         const [copied, setCopied] = useState(false);
-        
-        const langMap: Record<string, string> = {
-            'js': 'javascript', 'ts': 'typescript', 'py': 'python', 
-            'htm': 'markup', 'html': 'markup', 'xml': 'markup',
-            'svg': 'markup', 'sh': 'bash', 'bash': 'bash', 'shell': 'bash'
-        };
-        const mappedLang = langMap[language] || language;
-        
+        const mappedLang = LANG_MAP[language] || language;
+
         const handleCopy = async () => {
             try {
                 await navigator.clipboard.writeText(codeContent);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
-            } catch (err) { 
-                console.error('Copy failed:', err); 
+            } catch (err) {
+                console.error('Copy failed:', err);
             }
         };
-        
+
         return (
             <div style={{ position: 'relative' }} className="code-block-wrapper" data-language={mappedLang}>
-                <div className="code-block-header" style={{
-                    position: 'absolute', top: '0', right: '0', display: 'flex', alignItems: 'center',
-                    backgroundColor: '#2d2d2d', borderBottomLeftRadius: '4px', borderTopRightRadius: '4px',
-                    zIndex: 10, overflow: 'hidden', userSelect: 'none'
-                }}>
-                    <div style={{ padding: '4px 8px', fontSize: '12px', fontFamily: 'monospace', color: '#858585', textTransform: 'uppercase', pointerEvents: 'none', borderRight: '1px solid #3e3e3e' }}>
-                        {mappedLang === 'markup' ? 'html' : (mappedLang || 'code')}
-                    </div>
-                    <button className="copy-code-btn" onClick={handleCopy} style={{ 
-                        background: 'transparent', border: 'none', 
-                        color: copied ? '#4ade80' : '#b0b0b0', 
-                        cursor: 'pointer', padding: '4px 8px', 
-                        display: 'flex', alignItems: 'center',
-                        transition: 'color 0.2s'
-                    }} title="Копировать код">
-                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                    </button>
-                </div>
+                <CodeBlockHeader language={mappedLang} onCopy={handleCopy} copied={copied} />
                 <div className="code-block-content">
                     <SyntaxHighlighter PreTag="div" language={mappedLang || 'text'} style={vscDarkPlus} customStyle={{ background: '#252526', borderRadius: '4px', padding: '8px', margin: '0', fontSize: '16px', whiteSpace: 'pre' }}>
                         {codeContent}
@@ -475,848 +474,10 @@ const Callout = ({ children }: any) => {
         return processed;
     };
 
-    const _setupInteractions = (container: HTMLElement) => {
-            container.addEventListener('click', async (e) => {
-                const target = e.target as HTMLElement;
-                const btn = target.closest('.copy-code-btn');
-                
-                if (btn) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const wrapper = btn.closest('.code-block-wrapper');
-                    if (wrapper) {
-                        const contentDiv = wrapper.querySelector('.code-block-content');
-                        if (contentDiv) {
-                            const text = contentDiv.textContent || '';
-                            try {
-                                await navigator.clipboard.writeText(text);
-                                const originalHtml = btn.innerHTML;
-                                const checkIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>';
-                                btn.innerHTML = checkIcon;
-                                (btn as HTMLElement).style.color = '#4ade80';
-                                setTimeout(() => {
-                                    btn.innerHTML = originalHtml;
-                                    (btn as HTMLElement).style.color = '#b0b0b0';
-                                }, 2000);
-                            } catch (err) {
-                                console.error('Copy failed:', err);
-                            }
-                        }
-                    }
-                }
 
-                // Handle collapsible callout toggle
-                const calloutTitle = target.closest('.callout-title');
-                if (calloutTitle) {
-                    const callout = calloutTitle.closest('.callout[data-collapsible="true"]');
-                    if (callout) {
-                        e.stopPropagation();
-                        callout.classList.toggle('is-collapsed');
-                    }
-                }
-            });
 
-            // Markdown code fence detection - detect ```lang...``` and convert to code block
-            container.addEventListener('input', (e) => {
-                const target = e.target as HTMLElement;
-                // Only process if we're typing in a text node or paragraph
-                if (!target.closest('.code-block-wrapper')) {
-                    const selection = window.getSelection();
-                    if (!selection || selection.rangeCount === 0) return;
-                    
-                    const range = selection.getRangeAt(0);
-                    const textNode = range.startContainer;
-                    if (textNode.nodeType !== Node.TEXT_NODE) return;
-                    
-                    const text = textNode.textContent || '';
-                    // Match opening ``` with optional language, content, and closing ```
-                    const codeFenceRegex = /```(\w*)\n([\s\S]*?)```/;
-                    const match = text.match(codeFenceRegex);
-                    
-                    if (match) {
-                        const language = match[1] || 'plaintext';
-                        const codeContent = match[2].trim();
-                        const fullMatch = match[0];
-                        
-                        // Create code block HTML
-                        const codeBlockHtml = `<pre><div class="code-block-wrapper" data-language="${language}" style="position: relative;"><div class="code-block-content">${codeContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div></pre>`;
-                        
-                        // Find the parent element to replace content in
-                        const parentEl = textNode.parentElement;
-                        if (parentEl) {
-                            const beforeText = text.substring(0, text.indexOf(fullMatch));
-                            const afterText = text.substring(text.indexOf(fullMatch) + fullMatch.length);
-                            
-                            // Create a temporary container for the new content
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = beforeText + codeBlockHtml + afterText;
-                            
-                            // Replace textNode content with the HTML
-                            const fragment = document.createDocumentFragment();
-                            while (tempDiv.firstChild) {
-                                fragment.appendChild(tempDiv.firstChild);
-                            }
-                            
-                            // Replace the text node with our new content
-                            const parentOfText = textNode.parentNode;
-                            if (parentOfText) {
-                                parentOfText.replaceChild(fragment, textNode);
-                            }
-                        }
-                    }
-                }
-            });
-    };
 
-    const _setupResize = (container: HTMLElement) => {
-        // Make resizable elements
-        const makeResizable = (element: HTMLElement) => {
-            // Skip if already has resize handles or is inside code block content
-            if (element.querySelector('.resize-handle')) return;
-            if (element.closest('.code-block-content')) return;
-            if (element.classList.contains('resize-handle')) return;
-            
-            // Create resize handles - all corners and edges
-            const handles = ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'];
-            handles.forEach(pos => {
-                const handle = document.createElement('div');
-                handle.className = `resize-handle handle-${pos}`;
-                handle.dataset.handle = pos;
-                handle.contentEditable = 'false';
-                element.appendChild(handle);
-            });
-            
-            element.style.position = 'relative';
-            element.classList.add('resizable');
-        };
-        
-        // Apply resize to ALL block elements that could be resized
-        const applyResizeToElements = () => {
-            // Comprehensive selector for all resizable elements
-            const resizableSelector = [
-                '.media-wrapper',
-                '.callout',
-                '.code-block-wrapper',
-                'table',
-                'blockquote:not(.callout)',
-                'button',
-                '.flex-row',
-                '.flex-col',
-                '.grid-cell',
-                'div[style*="background"]',
-                'div[style*="border"]',
-                'div[style*="padding"]'
-            ].join(', ');
-            
-            container.querySelectorAll(resizableSelector).forEach(el => {
-                const htmlEl = el as HTMLElement;
-                // Don't add handles to elements inside other resizable elements
-                if (!htmlEl.closest('.resizable') || htmlEl.classList.contains('callout') || htmlEl.classList.contains('code-block-wrapper') || htmlEl.classList.contains('grid-cell')) {
-                    makeResizable(htmlEl);
-                }
-            });
-        };
-        
-        // Initial setup
-        applyResizeToElements();
-        
-        // Resize state
-        let isResizing = false;
-        let currentElement: HTMLElement | null = null;
-        let currentHandle = '';
-        let startX = 0;
-        let startY = 0;
-        let startWidth = 0;
-        let startHeight = 0;
-        
-        // Mouse down on handle
-        container.addEventListener('mousedown', (e) => {
-            const target = e.target as HTMLElement;
-            if (target.classList.contains('resize-handle')) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                currentHandle = target.dataset.handle || 'se';
-                currentElement = target.parentElement as HTMLElement;
-                
-                if (!currentElement) return;
-                
-                isResizing = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startWidth = currentElement.offsetWidth;
-                startHeight = currentElement.offsetHeight;
-                
-                // Freeze siblings in flex row so they don't deform
-                const parent = currentElement.parentElement;
-                if (parent && parent.classList.contains('flex-row')) {
-                    Array.from(parent.children).forEach(child => {
-                        const el = child as HTMLElement;
-                        if (el !== currentElement && (el.classList.contains('resizable') || el.classList.contains('callout') || el.classList.contains('media-wrapper'))) {
-                            if (el.style.flex !== 'none') {
-                                // Freeze their current computed width
-                                el.style.width = `${el.offsetWidth}px`;
-                                el.style.flex = 'none';
-                            }
-                        }
-                    });
-                }
-                
-                currentElement.classList.add('resizing');
-                document.body.style.cursor = getComputedStyle(target).cursor;
-                document.body.style.userSelect = 'none';
-            }
-        });
-        
-        // Mouse move for resize
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isResizing || !currentElement) return;
-            
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            
-            let newWidth = startWidth;
-            let newHeight = startHeight;
-            
-            const minSize = 30;
-            
-            // Handle all resize directions
-            switch(currentHandle) {
-                case 'e':
-                     newWidth = Math.max(minSize, startWidth + dx);
-                     break;
-                case 'w':
-                     newWidth = Math.max(minSize, startWidth - dx);
-                     break;
-                case 's':
-                     newHeight = Math.max(minSize, startHeight + dy);
-                     break;
-                case 'n':
-                     newHeight = Math.max(minSize, startHeight - dy);
-                     break;
-                case 'se':
-                     newWidth = Math.max(minSize, startWidth + dx);
-                     newHeight = Math.max(minSize, startHeight + dy);
-                     break;
-                case 'sw':
-                     newWidth = Math.max(minSize, startWidth - dx);
-                     newHeight = Math.max(minSize, startHeight + dy);
-                     break;
-                case 'ne':
-                     newWidth = Math.max(minSize, startWidth + dx);
-                     newHeight = Math.max(minSize, startHeight - dy);
-                     break;
-                case 'nw':
-                     newWidth = Math.max(minSize, startWidth - dx);
-                     newHeight = Math.max(minSize, startHeight - dy);
-                     break;
-            }
-            
-            // For images and videos, maintain aspect ratio when using corner handles
-            if ((currentElement.tagName === 'IMG' || currentElement.tagName === 'VIDEO' || currentElement.classList.contains('media-wrapper')) && 
-                ['se', 'sw', 'ne', 'nw'].includes(currentHandle)) {
-                const aspectRatio = startWidth / startHeight;
-                // Use the larger delta to determine size
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    newHeight = newWidth / aspectRatio;
-                } else {
-                    newWidth = newHeight * aspectRatio;
-                }
-            }
-            
-            // Apply dimensions
-            if (['e', 'w', 'se', 'sw', 'ne', 'nw'].includes(currentHandle)) {
-                if (currentElement.classList.contains('grid-cell')) {
-                    const parent = currentElement.parentElement;
-                    if (parent && parent.classList.contains('dashboard-grid')) {
-                        const colWidth = parent.offsetWidth / 12;
-                        const span = Math.max(1, Math.min(12, Math.round(newWidth / colWidth)));
-                        currentElement.style.gridColumn = `span ${span}`;
-                        currentElement.style.width = ''; // remove absolute width
-                    } else {
-                        currentElement.style.width = `${newWidth}px`;
-                    }
-                } else {
-                    currentElement.style.width = `${newWidth}px`;
-                }
-            }
-            
-            // Only apply height for elements that need it
-            if (['s', 'n', 'se', 'sw', 'ne', 'nw'].includes(currentHandle)) {
-                currentElement.style.height = `${newHeight}px`;
-            }
-            
-            // For images - ensure they don't use max-width 100%
-            if (currentElement.tagName === 'IMG' || currentElement.tagName === 'VIDEO' || currentElement.classList.contains('media-wrapper')) {
-                currentElement.style.maxWidth = 'none';
-            }
-            
-            // Override flex properties if inside a flex container to allow manual sizing
-            currentElement.style.flex = 'none';
-            
-            // Keep element in document flow (don't use position:absolute)
-            currentElement.style.boxSizing = 'border-box';
-        };
-        
-        document.addEventListener('mousemove', handleMouseMove);
-        
-        // Mouse up - finish resize
-        const handleMouseUp = () => {
-            if (isResizing && currentElement) {
-                currentElement.classList.remove('resizing');
-                isResizing = false;
-                currentElement = null;
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-            }
-        };
-        
-        document.addEventListener('mouseup', handleMouseUp);
-        
-        // Re-apply resize handles when content changes (MutationObserver)
-        const observer = new MutationObserver(() => {
-            applyResizeToElements();
-        });
-        
-        observer.observe(container, { childList: true, subtree: true });
-        
-        // Return cleanup function
-        return () => {
-            observer.disconnect();
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    };
 
-    const _setupDragAndDrop = (container: HTMLElement) => {
-            let draggedItem: HTMLElement | null = null;
-            let indicator: HTMLElement | null = null;
-            
-            // Get filePath from window (set by Preview component)
-            const getCurrentFilePath = () => (window as any).__currentFilePath || '';
-            
-            // Interaction State
-            let targetElement: HTMLElement | null = null;
-            let insertionType: 'before' | 'after' | 'left' | 'right' | 'inside' | null = null;
-
-            // Visual Indicator
-            const createIndicator = () => {
-                if (!indicator) {
-                    indicator = document.createElement('div');
-                    indicator.className = 'drop-indicator';
-                    document.body.appendChild(indicator);
-                }
-            };
-
-            const updateIndicator = (rect: DOMRect, type: 'before' | 'after' | 'left' | 'right') => {
-                if (!indicator) createIndicator();
-                if (!indicator) return;
-
-                indicator.style.display = 'block';
-                
-                // Reset dimensions and background
-                indicator.style.width = '';
-                indicator.style.height = '';
-                indicator.style.backgroundColor = '';
-                
-                if (type === 'before') { // Top
-                    indicator.style.top = `${rect.top - 2}px`;
-                    indicator.style.left = `${rect.left}px`;
-                    indicator.style.width = `${rect.width}px`;
-                    indicator.style.height = '4px';
-                } else if (type === 'after') { // Bottom
-                    indicator.style.top = `${rect.bottom - 2}px`;
-                    indicator.style.left = `${rect.left}px`;
-                    indicator.style.width = `${rect.width}px`;
-                    indicator.style.height = '4px';
-                } else if (type === 'left') {
-                    indicator.style.top = `${rect.top}px`;
-                    indicator.style.left = `${rect.left - 2}px`;
-                    indicator.style.height = `${rect.height}px`;
-                    indicator.style.width = '4px';
-                } else if (type === 'right') {
-                    indicator.style.top = `${rect.top}px`;
-                    indicator.style.left = `${rect.right - 2}px`;
-                    indicator.style.height = `${rect.height}px`;
-                    indicator.style.width = '4px';
-                }
-            };
-
-            const clearVisuals = () => {
-               if (indicator) indicator.style.display = 'none';
-               targetElement = null;
-               insertionType = null;
-            };
-
-            // Recursively make elements draggable
-            const makeDraggable = (root: HTMLElement) => {
-                const significantSelector = 'p, h1, h2, h3, h4, h5, h6, ul, ol, li, img, button, table, blockquote, .callout, pre, .code-block-wrapper, .flex-row, .flex-col, .dashboard-grid, .grid-cell';
-                
-                const processNode = (child: any) => {
-                    if (!child || !child.tagName) return;
-                    if (child.tagName === 'SCRIPT' || child.tagName === 'STYLE') return;
-                    if (child.closest && child.closest('.code-block-content')) return; 
-                    if (child.parentElement && child.parentElement.closest('.callout') && !child.classList.contains('callout')) return; 
-
-                    if (!child.classList.contains('draggable-block')) {
-                        child.classList.add('draggable-block');
-                        
-                        child.addEventListener('mouseenter', (e: MouseEvent) => {
-                            if (container.contentEditable === 'true' && !draggedItem) {
-                                e.stopPropagation();
-                                
-                                // Remove old hover handle if exists
-                                const oldHandle = container.querySelector('.hover-drag-handle');
-                                if (oldHandle) oldHandle.remove();
-
-                                // Add new handle
-                                const handle = document.createElement('div');
-                                handle.className = 'custom-drag-handle hover-drag-handle';
-                                handle.contentEditable = 'false';
-                                handle.draggable = true;
-                                Object.assign(handle.style, {
-                                    position: 'absolute',
-                                    right: '8px',
-                                    top: '8px',
-                                    width: '32px',
-                                    height: '32px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'grab',
-                                    color: '#ffffff',
-                                    borderRadius: '6px',
-                                    userSelect: 'none',
-                                    zIndex: '10',
-                                    backgroundColor: 'var(--interactive-accent)',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                                    opacity: '1',
-                                    transition: 'all 0.2s ease'
-                                });
-                                handle.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01"/></svg>';
-                                handle.addEventListener('mouseenter', () => {
-                                    handle.style.transform = 'scale(1.1)';
-                                    handle.style.backgroundColor = '#2ecc71';
-                                    handle.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.8)';
-                                });
-                                handle.addEventListener('mouseleave', () => {
-                                    handle.style.transform = 'scale(1)';
-                                    handle.style.backgroundColor = 'var(--interactive-accent)';
-                                    handle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
-                                });
-                                
-                                if (window.getComputedStyle(child).position === 'static') {
-                                    child.style.position = 'relative';
-                                }
-                                child.appendChild(handle);
-                            }
-                        });
-                        child.addEventListener('mouseleave', (e: MouseEvent) => {
-                            const handle = child.querySelector('.hover-drag-handle');
-                            if (handle && (!e.relatedTarget || !child.contains(e.relatedTarget as Node))) {
-                                handle.remove();
-                            }
-                        });
-                    }
-                };
-
-                const elements = root.querySelectorAll(significantSelector);
-                Array.from(elements).forEach(processNode);
-
-                const dragObserver = new MutationObserver((mutations) => {
-                    mutations.forEach(mutation => {
-                        mutation.addedNodes.forEach((node: any) => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                if (node.matches && node.matches(significantSelector)) {
-                                    processNode(node);
-                                }
-                                if (node.querySelectorAll) {
-                                    const nested = node.querySelectorAll(significantSelector);
-                                    if (nested.length > 0) {
-                                        Array.from(nested).forEach(processNode);
-                                    }
-                                }
-                            }
-                        });
-                    });
-                });
-                
-                dragObserver.observe(root, { childList: true, subtree: true });
-                return dragObserver;
-            };
-
-            // Initial setup and observer
-            const dragObserver = makeDraggable(container);
-
-            const onDragStart = (e: any) => {
-                if (container.contentEditable !== 'true') return;
-                let target = e.target as HTMLElement;
-                if (target.classList.contains('custom-drag-handle')) {
-                    draggedItem = target.parentElement as HTMLElement;
-                } else {
-                    draggedItem = target.closest('.draggable-block') as HTMLElement || target;
-                }
-                
-                if (!draggedItem) return;
-                
-                // Smart Selection
-                const wrapper = draggedItem.closest('.callout, .code-block-wrapper, .flex-row');
-                if (wrapper && container.contains(wrapper) && wrapper !== container) {
-                     draggedItem = wrapper as HTMLElement;
-                }
-
-                draggedItem.classList.add('sortable-dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', '');
-                e.stopPropagation();
-            };
-
-            const onDragEnd = () => {
-                 if (draggedItem) draggedItem.classList.remove('sortable-dragging');
-                 clearVisuals();
-                 draggedItem = null;
-                 makeDraggable(container);
-            };
-
-            const onDragOver = (e: any) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const target = e.target as HTMLElement;
-                
-                // Find best target block
-                let block = target.closest('.draggable-block') as HTMLElement;
-                const dropContainer = target.closest('.grid-cell, .callout, blockquote, td, th') as HTMLElement;
-
-                let min = 0, distTop = 0, distBottom = 0, distLeft = 0, distRight = 0;
-                let rect: DOMRect | null = null;
-                if (block) {
-                    rect = block.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    distTop = Math.abs(y - rect.top);
-                    distBottom = Math.abs(y - rect.bottom);
-                    distLeft = Math.abs(x - rect.left);
-                    distRight = Math.abs(x - rect.right);
-                    min = Math.min(distTop, distBottom, distLeft, distRight);
-                }
-
-                if (dropContainer) {
-                    const isBlockOutsideContainer = block && !dropContainer.contains(block);
-                    if (!block || isBlockOutsideContainer || (dropContainer === block && min > 15)) {
-                        // Drop inside the container
-                        targetElement = dropContainer;
-                        insertionType = 'inside';
-                        
-                        if (!indicator) createIndicator();
-                        if (indicator) {
-                             indicator.style.display = 'block';
-                             indicator.style.top = `${dropContainer.getBoundingClientRect().top}px`;
-                             indicator.style.left = `${dropContainer.getBoundingClientRect().left}px`;
-                             indicator.style.width = `${dropContainer.offsetWidth}px`;
-                             indicator.style.height = `${dropContainer.offsetHeight}px`;
-                             indicator.style.backgroundColor = 'rgba(68, 138, 255, 0.2)'; // Highlight color
-                        }
-                        return;
-                    }
-                }
-                
-                if (block && (!draggedItem || !block.contains(draggedItem)) && block !== draggedItem) {
-                    targetElement = block;
-                    
-                    if (min === distTop) insertionType = 'before';
-                    else if (min === distBottom) insertionType = 'after';
-                    else if (min === distLeft) insertionType = 'left';
-                    else insertionType = 'right';
-
-                    updateIndicator(rect as DOMRect, insertionType);
-                } else if (!block && target.closest('.design-mode-container')) {
-                    // Only look at top-level blocks to avoid selecting inner cells
-                    const topLevelBlocks = Array.from(container.children).filter(child => child.classList.contains('draggable-block'));
-                    if (topLevelBlocks.length > 0) {
-                        let closestBlock: HTMLElement | null = null;
-                        let closestDist = Infinity;
-                        let bestType: 'before' | 'after' = 'after';
-
-                        topLevelBlocks.forEach(child => {
-                             const childRect = (child as HTMLElement).getBoundingClientRect();
-                             const dTop = Math.abs(e.clientY - childRect.top);
-                             const dBottom = Math.abs(e.clientY - childRect.bottom);
-                             
-                             if (dTop < closestDist) {
-                                 closestDist = dTop;
-                                 closestBlock = child as HTMLElement;
-                                 bestType = 'before';
-                             }
-                             if (dBottom < closestDist) {
-                                 closestDist = dBottom;
-                                 closestBlock = child as HTMLElement;
-                                 bestType = 'after';
-                             }
-                        });
-
-                        if (closestBlock) {
-                            targetElement = closestBlock;
-                            insertionType = bestType;
-                            updateIndicator((closestBlock as HTMLElement).getBoundingClientRect(), bestType);
-                        }
-                    } else {
-                        targetElement = container;
-                        insertionType = 'inside';
-                        if (!indicator) createIndicator();
-                        if (indicator) {
-                             indicator.style.display = 'block';
-                             const containerRect = container.getBoundingClientRect();
-                             indicator.style.top = `${containerRect.top + 10}px`;
-                             indicator.style.left = `${containerRect.left + 10}px`;
-                             indicator.style.width = `${containerRect.width - 20}px`;
-                             indicator.style.height = '4px';
-                             indicator.style.backgroundColor = 'var(--interactive-accent)';
-                        }
-                    }
-                } else {
-                    clearVisuals();
-                }
-            };
-
-            const onDragLeave = () => {
-                 // only clear if leaving window or container really far?
-                 // relying on dragover to clear works better usually
-            };
-
-            const onDrop = async (e: any) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (indicator) indicator.style.display = 'none';
-
-                let itemToDrop = draggedItem;
-
-                // Handle files dropped from OS (images/videos)
-                const files = e.dataTransfer?.files as FileList;
-                if (files && files.length > 0 && !draggedItem) {
-                    for (const file of Array.from(files)) {
-                        const isImage = file.type.startsWith('image/');
-                        const isVideo = file.type.startsWith('video/');
-                        
-                        if ((isImage || isVideo) && (file as any).path) {
-                            try {
-                                // Get base directory from filePath
-                                const currentFilePath = getCurrentFilePath();
-                                // Normalize path separators
-                                const normalizedPath = currentFilePath.replace(/\\/g, '/');
-                                const baseDir = normalizedPath.substring(0, normalizedPath.lastIndexOf('/'));
-                                const assetsDir = `${baseDir}/assets`;
-                                const newName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-                                const destPath = `${assetsDir}/${newName}`;
-                                
-                                console.log('Copying file to:', destPath);
-                                
-                                // Copy file to assets folder
-                                await window.electronAPI.copyFile((file as any).path, destPath);
-                                
-                                // Create media element with proper file:// URL
-                                const fileUrl = `file:///${destPath.replace(/\\/g, '/')}`;
-                                console.log('Image URL:', fileUrl);
-                                
-                                if (isVideo) {
-                                     const wrapper = document.createElement('div');
-                                     wrapper.className = 'media-wrapper resizable';
-                                     wrapper.style.display = 'inline-block';
-                                     wrapper.style.maxWidth = '100%';
-                                     
-                                     const videoEl = document.createElement('video');
-                                     videoEl.src = fileUrl;
-                                     videoEl.setAttribute('controls', 'true');
-                                     videoEl.style.width = '100%';
-                                     videoEl.style.height = '100%';
-                                     videoEl.style.display = 'block';
-                                     videoEl.style.borderRadius = '4px';
-                                     
-                                     wrapper.appendChild(videoEl);
-                                     itemToDrop = wrapper;
-                                 } else {
-                                     const wrapper = document.createElement('div');
-                                     wrapper.className = 'media-wrapper resizable';
-                                     wrapper.style.display = 'inline-block';
-                                     wrapper.style.maxWidth = '100%';
-                                     
-                                     const imgEl = document.createElement('img');
-                                     imgEl.src = fileUrl;
-                                     imgEl.style.width = '100%';
-                                     imgEl.style.height = '100%';
-                                     imgEl.style.display = 'block';
-                                     
-                                     wrapper.appendChild(imgEl);
-                                     itemToDrop = wrapper;
-                                 }
-                                
-                                // Trigger file explorer refresh
-                                if ((window as any).__previewOnRefresh) {
-                                    (window as any).__previewOnRefresh();
-                                }
-                            } catch (err) {
-                                console.error('Failed to copy media file:', err);
-                            }
-                        }
-                    }
-                }
-
-                // Handle files dragged from internal file explorer
-                if (!itemToDrop) {
-                    const internalMediaPath = e.dataTransfer?.getData('application/x-media-path');
-                    if (internalMediaPath) {
-                        // Normalize path and create file URL
-                        const normalizedPath = internalMediaPath.replace(/\\/g, '/');
-                        const fileUrl = `file:///${normalizedPath}`;
-                        
-                        // Check if it's a video or image
-                        const isVideo = /\.(mp4|webm|ogv|mkv|mov|avi)$/i.test(internalMediaPath);
-                        
-                        if (isVideo) {
-                            const videoEl = document.createElement('video');
-                            videoEl.src = fileUrl;
-                            videoEl.setAttribute('controls', 'true');
-                            videoEl.style.maxWidth = '100%';
-                            itemToDrop = videoEl;
-                        } else {
-                            const imgEl = document.createElement('img');
-                            imgEl.src = fileUrl;
-                            imgEl.style.maxWidth = '100%';
-                            imgEl.alt = '';
-                            itemToDrop = imgEl;
-                        }
-                    }
-                }
-
-                // Handle External Drop (templates or text)
-                if (!itemToDrop) {
-                    const content = (window as any).__draggingTemplateContent || e.dataTransfer.getData('text/plain');
-                    if (content) {
-                         const newHtml = markdownToHtmlHelper(content);
-                         const tempDiv = document.createElement('div');
-                         tempDiv.innerHTML = newHtml;
-
-                         const nodes = Array.from(tempDiv.children) as HTMLElement[];
-                         if (nodes.length === 1) itemToDrop = nodes[0];
-                         else {
-                             // Wrap multiple items if needed, or just append first?
-                             // For simplicity, let's wrap in a div if multiple
-                             const wrapper = document.createElement('div');
-                             nodes.forEach(n => wrapper.appendChild(n));
-                             itemToDrop = wrapper;
-                         }
-                         (window as any).__draggingTemplateContent = null;
-                    }
-                }
-
-                if (itemToDrop && targetElement && insertionType) {
-                    // Prevent circular DOM manipulation - can't drop parent on child
-                    if (itemToDrop.contains(targetElement)) {
-                        // Invalid drop - the item we're dropping contains the target
-                        clearVisuals();
-                        if (draggedItem) {
-                            draggedItem.classList.remove('sortable-dragging');
-                            draggedItem.style.opacity = '';
-                        }
-                        draggedItem = null;
-                        return;
-                    }
-                    
-                    if (insertionType === 'inside') {
-                        // Clear the cell if it only contains the placeholder text or is empty
-                        let containerToAppend = targetElement;
-                        if (targetElement.classList.contains('callout')) {
-                            const content = targetElement.querySelector('.callout-content');
-                            if (content) containerToAppend = content as HTMLElement;
-                        }
-                        containerToAppend.appendChild(itemToDrop);
-                    }
-                    else if (insertionType === 'before') {
-                        targetElement.before(itemToDrop);
-                    } 
-                    else if (insertionType === 'after') {
-                        targetElement.after(itemToDrop);
-                    }
-                    else if (insertionType === 'left' || insertionType === 'right') {
-                        // Auto-Column Creation
-                        const parent = targetElement.parentElement;
-                        
-                        // Check if already in a flex row
-                        if (parent && parent.classList.contains('flex-row')) {
-                            if (itemToDrop instanceof HTMLElement) {
-                                // If item doesn't have an explicit flex or width set, give it flex-1
-                                if (!itemToDrop.style.flex && !itemToDrop.style.width) {
-                                    itemToDrop.style.flex = '1 1 0%';
-                                    itemToDrop.style.minWidth = '0px';
-                                }
-                            }
-                            if (insertionType === 'left') targetElement.before(itemToDrop);
-                            else targetElement.after(itemToDrop);
-                        } else {
-                            // Create new Flex Row wrapper
-                            const row = document.createElement('div');
-                            row.className = 'flex-row';
-                            row.style.display = 'flex';
-                            row.style.gap = '16px';
-                            row.style.width = '100%';
-                            row.style.alignItems = 'flex-start'; // Top align usually best
-
-                            targetElement.replaceWith(row);
-                            
-                            // Ensure items have flex-1
-                            targetElement.style.flex = '1 1 0%';
-                            targetElement.style.minWidth = '0px';
-                            
-                            if (itemToDrop instanceof HTMLElement) {
-                                itemToDrop.style.flex = '1 1 0%';
-                                itemToDrop.style.minWidth = '0px';
-                            }
-
-                            if (insertionType === 'left') {
-                                row.appendChild(itemToDrop);
-                                row.appendChild(targetElement);
-                            } else {
-                                row.appendChild(targetElement);
-                                row.appendChild(itemToDrop);
-                            }
-                        }
-                    }
-                } else if (itemToDrop && !targetElement && itemToDrop !== draggedItem) {
-                    // Only append to end if it's a NEW external item (template/file), 
-                    // NOT an existing element being re-dragged
-                    container.appendChild(itemToDrop);
-                }
-                // If draggedItem was dropped without a valid target, it stays in place (no action needed)
-                
-                
-                if (draggedItem) {
-                    draggedItem.classList.remove('sortable-dragging');
-                    draggedItem.style.opacity = '';
-                }
-                makeDraggable(container);
-                draggedItem = null;
-                clearVisuals();
-            };
-
-            container.addEventListener('dragstart', onDragStart);
-            container.addEventListener('dragend', onDragEnd);
-            container.addEventListener('dragover', onDragOver);
-            container.addEventListener('dragenter', (e) => e.preventDefault());
-            container.addEventListener('dragleave', onDragLeave);
-            container.addEventListener('drop', onDrop);
-
-            return () => {
-                 container.removeEventListener('dragstart', onDragStart);
-                 container.removeEventListener('dragend', onDragEnd);
-                 container.removeEventListener('dragover', onDragOver);
-                 container.removeEventListener('dragleave', onDragLeave);
-                 container.removeEventListener('drop', onDrop);
-                 if (indicator) indicator.remove();
-                 if (dragObserver) dragObserver.disconnect();
-            };
-    };
 
     interface PreviewProps {
         content: string;
@@ -1334,36 +495,36 @@ const Callout = ({ children }: any) => {
         onRefresh?: () => void;
         activeSourcePos?: string | null;
         onSelectSourcePos?: (pos: string | null) => void;
+        /** true — есть редактор рядом (Split Screen); false/undefined — чистый режим чтения */
+        hasEditor?: boolean;
     }
 
-    export default function Preview({ content, filePath, allFiles, onFileSelect, designMode = false, onRegisterSave, onAutoSave, selectedBlocks, onSelectBlocks, rootPath: _rootPath, onRefresh, activeSourcePos, onSelectSourcePos }: PreviewProps) {
+    export default function Preview({ content, filePath, allFiles, onFileSelect, designMode = false, onRegisterSave, onAutoSave, selectedBlocks, onSelectBlocks, rootPath: _rootPath, onRefresh, activeSourcePos: _activeSourcePos, onSelectSourcePos, hasEditor = false }: PreviewProps) {
 
     const editableRef = useRef<HTMLDivElement>(null);
     const previewRef = useRef<HTMLDivElement>(null);
     const dndCleanupRef = useRef<(() => void) | null>(null);
     const resizeCleanupRef = useRef<(() => void) | null>(null);
+    const interactionsCleanupRef = useRef<(() => void) | null>(null);
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const mutationObserverRef = useRef<MutationObserver | null>(null);
     const lastSavedContentRef = useRef<string>(content);
     
     // Fix paths to assets
     const fixedContent = fixPaths(content, _rootPath || '');
-    
-    // We use the prop 'selectedBlock' if available, otherwise we could track locally but App.tsx handles it now.
-// const [selectedBlock, setSelectedBlock] = useState<HTMLElement | null>(null);
 
     // Keep activeSourcePos in a ref so we can always access the latest value
     // without it being a stale closure issue inside layout effects
-    const activeSourcePosRef = useRef<string | null | undefined>(activeSourcePos);
-    activeSourcePosRef.current = activeSourcePos;
+    const activeSourcePosRef = useRef<string | null | undefined>(_activeSourcePos);
+    activeSourcePosRef.current = _activeSourcePos;
 
     // Track whether we need to scroll on the next highlight application
     const needsScrollRef = useRef<boolean>(false);
 
-    // When activeSourcePos changes (new click from editor or preview), mark that we need scroll
+    // When activeSourcePos changes, mark that we need scroll
     useEffect(() => {
         needsScrollRef.current = true;
-    }, [activeSourcePos]);
+    }, [_activeSourcePos]);
 
     // Helper: find best element for a given sourcePos string
     const findBestElement = (root: HTMLElement, sourcePos: string): Element | null => {
@@ -1397,19 +558,18 @@ const Callout = ({ children }: any) => {
         return best;
     };
 
-    // useLayoutEffect runs synchronously after every DOM paint.
-    // This means even if ReactMarkdown recreates the DOM, we ALWAYS re-apply the highlight.
-    // We use activeSourcePosRef.current instead of activeSourcePos to avoid needing
-    // it as a dependency (which would cause issues) — the ref is always up-to-date.
+    // useLayoutEffect: applies live-highlight in Split Screen mode (editor+preview).
+    // Skipped in Design Mode (uses selected-block class instead).
+    // In pure Reading Mode (no editor), activeSourcePos never changes, so no highlight fires.
     useLayoutEffect(() => {
         if (!previewRef.current || designMode) return;
-        const pos = activeSourcePosRef.current;
 
         // Remove all existing highlights
         previewRef.current.querySelectorAll('.live-highlight').forEach(el => {
             el.classList.remove('live-highlight');
         });
 
+        const pos = activeSourcePosRef.current;
         if (!pos) return;
 
         const bestElement = findBestElement(previewRef.current, pos);
@@ -1528,13 +688,10 @@ const Callout = ({ children }: any) => {
                         const newName = `${Date.now()}-clipboard.${ext}`;
                         const destPath = `${assetsDir}/${newName}`;
 
-                        console.log('Pasting to:', destPath);
-
                         await window.electronAPI.saveBlob(destPath, Array.from(new Uint8Array(buffer)));
 
                         // Create file:// URL with triple slashes for Windows
                         const fileUrl = `file:///${destPath.replace(/\\/g, '/')}`;
-                        console.log('Paste image URL:', fileUrl);
 
                         // Insert image at cursor or end
                                 if (editableRef.current) {
@@ -1559,33 +716,37 @@ const Callout = ({ children }: any) => {
         return () => document.removeEventListener('paste', handlePaste);
     }, [designMode, filePath, onRefresh]);
 
-        const handleBlockClick = (e: React.MouseEvent) => {
+         const handleBlockClick = (e: React.MouseEvent) => {
             let target = e.target as HTMLElement;
             if (target.closest('.block-toolbar')) return;
 
             if (!designMode) {
-                // In Preview mode, just find the closest element with data-sourcepos and sync
-                const blockElement = target.closest('[data-sourcepos]');
-                console.log("Clicked preview element:", target, "Found data-sourcepos element:", blockElement);
-                if (blockElement && onSelectSourcePos) {
-                    const sourcePos = blockElement.getAttribute('data-sourcepos');
-                    console.log("Found sourcePos:", sourcePos);
-                    if (sourcePos) {
-                        e.stopPropagation();
-                        onSelectSourcePos(sourcePos);
+                // Split Screen: click in preview syncs editor cursor + triggers live-highlight
+                if (hasEditor && onSelectSourcePos) {
+                    const blockElement = target.closest('[data-sourcepos]');
+                    if (blockElement) {
+                        const sourcePos = blockElement.getAttribute('data-sourcepos');
+                        if (sourcePos) {
+                            e.stopPropagation();
+                            onSelectSourcePos(sourcePos);
+                        }
                     }
                 }
+                // Reading Mode (hasEditor=false): no selection, do nothing
                 return;
             }
-
             if (editableRef.current && editableRef.current.contains(target) && target !== editableRef.current) {
                 let blockElement = target.closest('.draggable-block');
                 if (!blockElement) {
                      // Fallback for elements that might not have the class yet
-                     blockElement = target.closest('.code-block-wrapper, .callout, table, p, h1, h2, h3, h4, h5, h6, li, blockquote, img, video, hr');
+                     blockElement = target.closest('.code-block-wrapper, .callout, table, p, h1, h2, h3, h4, h5, h6, li, blockquote, img, video, hr, .grid-cell');
                 }
                 
-                if (blockElement && editableRef.current.contains(blockElement)) {
+                // If user clicked inside an empty grid cell (or on the cell itself), select the cell.
+                const cellElement = target.closest('.grid-cell') as HTMLElement;
+                if (cellElement && editableRef.current.contains(cellElement)) {
+                    target = cellElement;
+                } else if (blockElement && editableRef.current.contains(blockElement)) {
                     target = blockElement as HTMLElement;
                 }
 
@@ -1639,6 +800,15 @@ const Callout = ({ children }: any) => {
             
             const handles = clone.querySelectorAll('.resize-handle, .custom-drag-handle');
             handles.forEach(h => h.remove());
+
+            // Remove empty <p> and stray <br> that the browser injects inside grid-cell
+            // when contenteditable is active (they cause extra bottom space mismatch
+            // between Design Mode and Reading Mode)
+            clone.querySelectorAll('.grid-cell > p, .grid-cell > br').forEach(el => {
+                const isEmptyP = el.tagName === 'P' && (el.textContent || '').trim() === '';
+                const isBr = el.tagName === 'BR';
+                if (isEmptyP || isBr) el.remove();
+            });
 
             // Fix nested code-block-wrappers: keep only the outermost, extract deepest code content
             const codeWrappers = clone.querySelectorAll('.code-block-wrapper');
@@ -1866,9 +1036,9 @@ const Callout = ({ children }: any) => {
                             lastSavedContentRef.current = content;
                         }
                         
-                        _setupInteractions(editableRef.current);
-                        dndCleanupRef.current = _setupDragAndDrop(editableRef.current);
-                        resizeCleanupRef.current = _setupResize(editableRef.current);
+                        interactionsCleanupRef.current = setupInteractions(editableRef.current);
+                        dndCleanupRef.current = setupDragAndDrop({ container: editableRef.current, markdownToHtmlHelper });
+                        resizeCleanupRef.current = setupResize(editableRef.current);
                     }
                 }, 100);
                 return () => clearTimeout(timer);
@@ -1882,6 +1052,10 @@ const Callout = ({ children }: any) => {
                 if (resizeCleanupRef.current) {
                     resizeCleanupRef.current();
                     resizeCleanupRef.current = null;
+                }
+                if (interactionsCleanupRef.current) {
+                    interactionsCleanupRef.current();
+                    interactionsCleanupRef.current = null;
                 }
             };
         }, [designMode, content]);

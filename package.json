@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "obsidian-clone",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.19.0",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\"",

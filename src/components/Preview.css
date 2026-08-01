@@ -26,22 +26,7 @@
     max-width: 100%;
 }
 
-/* Live split-screen highlighting */
-.live-highlight {
-    border-radius: 4px;
-    animation: highlight-fade 1.5s ease-out forwards;
-}
 
-@keyframes highlight-fade {
-    0% {
-        outline: 2px solid var(--interactive-accent);
-        background-color: rgba(var(--interactive-accent-rgb), 0.1);
-    }
-    100% {
-        outline: 2px solid transparent;
-        background-color: transparent;
-    }
-}
 
 /* Prevent ANY media or layout block from overflowing the editor */
 .markdown-content-wrapper img,
@@ -777,12 +762,39 @@ video.resizable,
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
-.selected-block { outline: 2px solid var(--interactive-accent); outline-offset: -2px; z-index: 10; position: relative; }
+.selected-block { outline: 2px solid var(--interactive-accent) !important; outline-offset: -2px; z-index: 10; position: relative; }
 
 
 /* Отключаем нижний отступ для вложенной сетки внутри ячейки */
 .grid-cell > .dashboard-grid:last-child {
     margin-bottom: 0;
+}
+
+/* Вложенная сетка внутри ячейки — убираем margin-bottom всегда */
+.grid-cell > .dashboard-grid {
+    margin-bottom: 0 !important;
+}
+
+/* В Design Mode браузер вставляет пустые <p> и <br> после элементов внутри contenteditable.
+   Обнуляем их margin/padding и скрываем пустые br-заглушки */
+.design-mode-container .grid-cell > p:empty,
+.design-mode-container .grid-cell > br {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    line-height: 0 !important;
+}
+
+/* Пустые p с только nbsp или невидимым контентом тоже убираем */
+.design-mode-container .grid-cell > p {
+    margin-bottom: 0;
+}
+
+/* Если вложенная сетка единственный или последний прямой потомок ячейки */
+.grid-cell > .dashboard-grid:only-child,
+.grid-cell > .dashboard-grid:last-child {
+    margin-bottom: 0 !important;
 }
 
 .live-highlight {

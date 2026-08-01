@@ -20,6 +20,36 @@ interface OpenFile {
   content: string;
 }
 
+// ─── Shared style constants ───────────────────────────────────────────────────
+const CONTENT_PANEL_STYLE: React.CSSProperties = {
+  flex: 1,
+  overflow: 'hidden',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  backgroundColor: 'var(--background-primary)'
+};
+
+const EMPTY_STATE_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100%',
+  gap: '16px',
+  color: 'var(--text-muted)',
+  padding: '40px'
+};
+
+const KBD_STYLE: React.CSSProperties = {
+  background: 'var(--background-secondary)',
+  padding: '2px 6px',
+  borderRadius: '3px',
+  border: '1px solid var(--border-subtle)',
+  fontFamily: 'monospace',
+  fontSize: '12px'
+};
+
 function App() {
   const [rootPath, setRootPath] = useState<string>('');
   const [openFiles, setOpenFiles] = useState<OpenFile[]>([]);
@@ -116,65 +146,62 @@ function App() {
       setDesignMode(false);
   };
 
+  // Unified global keyboard shortcuts handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        // Ctrl+E or Cmd+E to toggle Design Mode
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
-            e.preventDefault();
-            
-            if (designMode) {
-                saveAndExitDesignMode();
-            } else {
-                // Enter Design Mode
-                setViewMode('preview');
-                setDesignMode(true);
-            }
+      const ctrl = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      // Ctrl+E — toggle Design Mode
+      if (ctrl && key === 'e') {
+        e.preventDefault();
+        if (designMode) {
+          saveAndExitDesignMode();
+        } else {
+          setViewMode('preview');
+          setDesignMode(true);
         }
-    };
+        return;
+      }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [designMode, activeFile]); // Dependencies ensure fresh activeFile
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    // Global keyboard shortcuts
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Command Palette
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      // Ctrl+P — Command Palette
+      if (ctrl && e.key === 'p') {
         e.preventDefault();
         setPaletteOpen(true);
+        return;
       }
-      
-      // Close current tab
-      if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
+
+      // Ctrl+W — close active tab
+      if (ctrl && e.key === 'w') {
         e.preventDefault();
-        if (activeFilePath) {
-          handleTabClose(activeFilePath);
-        }
+        if (activeFilePath) handleTabClose(activeFilePath);
+        return;
       }
-      
-      // Switch tabs with Ctrl+Tab / Ctrl+Shift+Tab
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Tab') {
+
+      // Ctrl+Tab / Ctrl+Shift+Tab — switch tabs
+      if (ctrl && e.key === 'Tab') {
         e.preventDefault();
         const currentIndex = openFiles.findIndex(f => f.path === activeFilePath);
         if (currentIndex !== -1) {
-          const nextIndex = e.shiftKey 
+          const nextIndex = e.shiftKey
             ? (currentIndex - 1 + openFiles.length) % openFiles.length
             : (currentIndex + 1) % openFiles.length;
           setActiveFilePath(openFiles[nextIndex].path);
         }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeFilePath, openFiles]);
+  }, [designMode, activeFile, activeFilePath, openFiles]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!rootPath || !window.electronAPI) return;
+
     
     const collectFiles = async (dir: string): Promise<string[]> => {
       const entries = await window.electronAPI.readDir(dir);
@@ -258,8 +285,6 @@ function App() {
   };
 
   const handleLinkNavigation = async (linkText: string) => {
-    // Find file matching the link text
-    // Find file matching the link text
     const matchingFile = allFiles.find(file => {
       const fileName = getBasename(file).replace('.md', '');
       return fileName?.toLowerCase() === linkText.toLowerCase();
@@ -511,25 +536,11 @@ function App() {
             />
           )}
           {mediaFile ? (
-            <div style={{ 
-                flex: 1, 
-                overflow: 'hidden', 
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                backgroundColor: 'var(--background-primary)'
-            }}>
+            <div style={CONTENT_PANEL_STYLE}>
                 <MediaViewer filePath={mediaFile.path} fileName={mediaFile.name} />
             </div>
           ) : activeFile ? (
-            <div style={{ 
-                flex: 1, 
-                overflow: 'hidden', 
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                backgroundColor: 'var(--background-primary)'
-            }}>
+            <div style={CONTENT_PANEL_STYLE}>
                 <div style={{ 
                     width: '100%', 
                     maxWidth: viewMode === 'split' ? '100%' : (contentWidth >= 1600 ? '100%' : `${contentWidth}px`), 
@@ -571,33 +582,18 @@ function App() {
                             onRefresh={() => setRefreshKey(k => k + 1)}
                             activeSourcePos={activeSourcePos}
                             onSelectSourcePos={setActiveSourcePos}
+                            hasEditor={viewMode === 'split'}
                         />
                     </div>
                   )}
                 </div>
             </div>
           ) : (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                gap: '16px',
-                color: 'var(--text-muted)',
-                padding: '40px'
-              }}>
+              <div style={EMPTY_STATE_STYLE}>
                 <FileText size={48} style={{ opacity: 0.3 }} />
                 <div style={{ fontSize: '18px', fontWeight: 500 }}>Выберите файл для просмотра</div>
                 <div style={{ fontSize: '14px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.6' }}>
-                  Откройте файл из проводника слева или используйте <kbd style={{
-                    background: 'var(--background-secondary)',
-                    padding: '2px 6px',
-                    borderRadius: '3px',
-                    border: '1px solid var(--border-subtle)',
-                    fontFamily: 'monospace',
-                    fontSize: '12px'
-                  }}>Ctrl+P</kbd> для быстрого поиска
+                  Откройте файл из проводника слева или используйте <kbd style={KBD_STYLE}>Ctrl+P</kbd> для быстрого поиска
                 </div>
               </div>
           )}

@@ -15,6 +15,9 @@ import * as prettierPluginBabel from 'prettier/plugins/babel';
 import * as prettierPluginHtml from 'prettier/plugins/html';
 import * as prettierPluginPostcss from 'prettier/plugins/postcss';
 
+// Prettier plugins list — defined once at module level to avoid re-allocation
+const PRETTIER_MARKDOWN_PLUGINS = [prettierPluginMarkdown, prettierPluginEstree, prettierPluginBabel, prettierPluginHtml, prettierPluginPostcss];
+const PRETTIER_HTML_PLUGINS = [prettierPluginHtml, prettierPluginMarkdown];
 
 class MediaWidget extends WidgetType {
     constructor(readonly url: string, readonly type: 'image' | 'video') { super() }
@@ -200,7 +203,7 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
 
             prettier.format(preProcessedDoc, {
                 parser: "markdown",
-                plugins: [prettierPluginMarkdown, prettierPluginEstree, prettierPluginBabel, prettierPluginHtml, prettierPluginPostcss],
+                plugins: PRETTIER_MARKDOWN_PLUGINS,
                 printWidth: 1000,
                 bracketSameLine: true
             }).then(async formatted => {
@@ -215,7 +218,7 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
                         try {
                             const htmlFormatted = await prettier.format(block, {
                                 parser: "html",
-                                plugins: [prettierPluginHtml, prettierPluginMarkdown],
+                                plugins: PRETTIER_HTML_PLUGINS,
                                 printWidth: 1000,
                                 bracketSameLine: true
                             });
@@ -236,7 +239,7 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
                     try {
                         const htmlFormatted = await prettier.format(formattedVideo, {
                             parser: "html",
-                            plugins: [prettierPluginHtml, prettierPluginMarkdown],
+                            plugins: PRETTIER_HTML_PLUGINS,
                             printWidth: 1000,
                             bracketSameLine: true
                         });
@@ -339,27 +342,21 @@ export default function Editor({ content, onChange, onNavigateLink, onStatsUpdat
                         }
 
                         // Only notify Preview if the selection change was caused by the user (not a programmatic sync)
-                        const isUserEvent = update.transactions.some(tr => {
-                            const isUser = tr.isUserEvent('select') || 
-                                         tr.isUserEvent('input') || 
-                                         tr.isUserEvent('delete') || 
-                                         tr.isUserEvent('undo') || 
-                                         tr.isUserEvent('redo');
-                            return isUser;
-                        });
+                        const isUserEvent = update.transactions.some(tr =>
+                            tr.isUserEvent('select') ||
+                            tr.isUserEvent('input') ||
+                            tr.isUserEvent('delete') ||
+                            tr.isUserEvent('undo') ||
+                            tr.isUserEvent('redo')
+                        );
                         
                         // We use a ref (isSyncingRef) to ensure programmatic syncs from Preview don't bounce back.
                         // We relax the hasFocus requirement because clicks outside the editor can trigger selection events
                         // but they are still user-initiated.
                         if (onSelectSourcePos && isUserEvent && !isSyncingRef.current) {
-                            // Check if the sourcePos being set is already matching this line to avoid feedback loops
                             const currentLineNum = String(line.number);
                             const activeSourceLine = activeSourcePos ? activeSourcePos.split(':')[0] : null;
                             if (currentLineNum !== activeSourceLine) {
-                                console.log("Editor is firing onSelectSourcePos due to userEvent!", {
-                                    line: line.number,
-                                    isSyncing: isSyncingRef.current
-                                });
                                 onSelectSourcePos(currentLineNum);
                             }
                         }
