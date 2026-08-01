@@ -762,16 +762,20 @@ video.resizable,
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
-/* --- Исправление отступов для вложенных сеток (Design Mode + Reading Mode) --- */
+/* --- Исправление отступов и высоты для вложенных сеток (Design Mode + Reading Mode) --- */
 
-/* Сбрасываем margin-bottom у любой сетки, находящейся внутри ячейки */
+/* Сбрасываем margin-bottom у любой сетки, находящейся внутри ячейки, и заставляем её тянуться на всю высоту */
 .grid-cell .dashboard-grid {
     margin-bottom: 0 !important;
+    flex: 1;
 }
 
-/* Если ReactMarkdown обернул вложенную сетку в <p>, убираем отступ у этого <p> */
+/* Если ReactMarkdown обернул вложенную сетку в <p>, этот <p> тоже должен тянуться и быть flex-контейнером */
 .grid-cell > p:has(> .dashboard-grid) {
     margin-bottom: 0 !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Убираем отступ у самого последнего параграфа в ячейке */
@@ -779,10 +783,10 @@ video.resizable,
     margin-bottom: 0 !important;
 }
 
-/* В Design Mode браузер может вставлять пустые <p> и <br> внутри contenteditable.
-   Скрываем их и убираем margin/padding, чтобы они не добавляли высоту ячейкам */
-.design-mode-container .grid-cell > p:empty,
-.design-mode-container .grid-cell > br {
+/* Скрываем пустые <p> и <br> внутри ячеек во всех режимах, 
+   чтобы они не добавляли лишних пустых пространств и не ломали высоту ячеек */
+.grid-cell > p:empty,
+.grid-cell > br {
     display: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -790,8 +794,9 @@ video.resizable,
     line-height: 0 !important;
 }
 
-/* Если p содержит только nbsp - это тоже пустая строка, мы можем хотя бы обнулить margin */
-.design-mode-container .grid-cell > p {
+/* Обнуляем margin-bottom у параграфов внутри ячеек, 
+   чтобы Reading Mode идентично совпадал с Design Mode */
+.grid-cell > p {
     margin-bottom: 0;
 }
 
