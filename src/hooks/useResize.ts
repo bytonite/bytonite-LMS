@@ -6,8 +6,12 @@ export const setupResize = (container: HTMLElement) => {
         if (element.closest('.code-block-content')) return;
         if (element.classList.contains('resize-handle')) return;
         
-        // Create resize handles - all corners and edges
-        const handles = ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'];
+        const isGridCell = element.classList.contains('grid-cell');
+        
+        // Create resize handles 
+        // Grid cells only get right/bottom/bottom-right to prevent margin-left collapse
+        const handles = isGridCell ? ['e', 's', 'se'] : ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'];
+        
         handles.forEach(pos => {
             const handle = document.createElement('div');
             handle.className = `resize-handle handle-${pos}`;
@@ -40,8 +44,14 @@ export const setupResize = (container: HTMLElement) => {
         
         container.querySelectorAll(resizableSelector).forEach(el => {
             const htmlEl = el as HTMLElement;
+            const isGridCell = htmlEl.classList.contains('grid-cell');
+            const parentCell = htmlEl.closest('.grid-cell');
+            
+            // Elements inside a grid cell should not be individually resizable; they adapt to the cell size
+            if (parentCell && !isGridCell) return;
+
             // Don't add handles to elements inside other resizable elements
-            if (!htmlEl.closest('.resizable') || htmlEl.classList.contains('callout') || htmlEl.classList.contains('code-block-wrapper') || htmlEl.classList.contains('grid-cell')) {
+            if (!htmlEl.closest('.resizable') || htmlEl.classList.contains('callout') || htmlEl.classList.contains('code-block-wrapper') || isGridCell) {
                 makeResizable(htmlEl);
             }
         });
@@ -162,9 +172,8 @@ export const setupResize = (container: HTMLElement) => {
                     const colWidth = parent.offsetWidth / 12;
                     const span = Math.max(1, Math.min(12, Math.round(newWidth / colWidth)));
                     currentElement.style.gridColumn = `span ${span}`;
-                    currentElement.style.width = ''; // remove absolute width
-                } else {
-                    currentElement.style.width = `${newWidth}px`;
+                    // We purposefully do NOT set absolute width on grid cells to keep layout fluid
+                    currentElement.style.width = ''; 
                 }
             } else {
                 currentElement.style.width = `${newWidth}px`;

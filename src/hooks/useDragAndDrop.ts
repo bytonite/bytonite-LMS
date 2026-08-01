@@ -91,24 +91,24 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                         handle.draggable = true;
                         Object.assign(handle.style, {
                             position: 'absolute',
-                            right: '8px',
-                            top: '8px',
-                            width: '32px',
-                            height: '32px',
+                            left: '12px',
+                            top: '12px',
+                            width: '24px',
+                            height: '24px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'grab',
                             color: '#ffffff',
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             userSelect: 'none',
-                            zIndex: '10',
+                            zIndex: '90',
                             backgroundColor: 'var(--interactive-accent)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                             opacity: '1',
                             transition: 'all 0.2s ease'
                         });
-                        handle.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01"/></svg>';
+                        handle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01"/></svg>';
                         handle.addEventListener('mouseenter', () => {
                             handle.style.transform = 'scale(1.1)';
                             handle.style.backgroundColor = '#2ecc71';
@@ -444,11 +444,22 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                 }
                 containerToAppend.appendChild(itemToDrop);
             }
-            else if (insertionType === 'before') {
-                targetElement.before(itemToDrop);
-            } 
-            else if (insertionType === 'after') {
-                targetElement.after(itemToDrop);
+            else if (insertionType === 'before' || insertionType === 'after') {
+                let finalItem = itemToDrop;
+                // Auto-wrap naked elements in a grid cell if dropped into a grid
+                if (targetElement.parentElement && targetElement.parentElement.classList.contains('dashboard-grid')) {
+                    if (itemToDrop instanceof HTMLElement && !itemToDrop.classList.contains('grid-cell')) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell grid-span-4 resizable';
+                        cell.appendChild(itemToDrop);
+                        finalItem = cell;
+                    }
+                }
+                if (insertionType === 'before') {
+                    targetElement.before(finalItem);
+                } else {
+                    targetElement.after(finalItem);
+                }
             }
             else if (insertionType === 'left' || insertionType === 'right') {
                 // Auto-Column Creation

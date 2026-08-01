@@ -689,11 +689,14 @@ video.resizable,
     border-radius: 8px;
     min-height: 50px;
     position: relative;
-    overflow: hidden; /* Чтобы контент не вылезал за закругленные края */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: grid-column 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+/* Убеждаемся, что вложенные элементы адаптивны */
+.grid-cell > * {
+    max-width: 100%;
+}
 /* Если в ячейку добавлен коллаут, он заполняет её целиком */
 .grid-cell .callout {
     height: 100% !important;
