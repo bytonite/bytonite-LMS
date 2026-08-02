@@ -170,5 +170,12 @@ export const templates: Template[] = [
         description: 'Цитата',
         icon: 'Quote',
         content: `> [!quote] Цитата\n> Слова великих.`
+    },
+    {
+        id: 'code-block-auto',
+        name: 'Код (Code)',
+        description: 'Блок кода (Автоопределение)',
+        icon: 'Code',
+        content: `<div class="code-block-wrapper draggable-block" data-language="auto"><div class="code-block-content"><code>// Ваш код здесь</code></div></div>`
     }
 ];

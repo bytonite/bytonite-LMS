@@ -721,7 +721,6 @@ video.resizable,
     flex-grow: 1;
     width: 100% !important;
     margin: 0 !important;
-    border-radius: 0 !important;
 }
 
 /* Растягиваем одиночные абзацы (часто оборачивают картинки) */
@@ -747,7 +746,6 @@ video.resizable,
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    border-radius: 0 !important;
 }
 
 /* В режиме чтения убираем очертания и фон у самой сетки */

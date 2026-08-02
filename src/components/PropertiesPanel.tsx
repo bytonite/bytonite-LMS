@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
     AlignLeft, AlignCenter, AlignRight, Type, Layout, Maximize, 
-    PaintBucket, BoxSelect, Bold, Italic, Underline, Trash2
+    PaintBucket, BoxSelect, Bold, Italic, Underline, Trash2, Ban
 } from 'lucide-react';
 import './PropertiesPanel.css';
 
@@ -82,7 +82,7 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
         return computed[prop as any];
     };
 
-    const handleDimensionChange = (prop: 'width' | 'height', val: string) => {
+    const handleDimensionChange = (prop: 'width' | 'height' | 'padding' | 'margin' | 'borderWidth' | 'borderRadius' | 'fontSize', val: string) => {
         if (val && !isNaN(Number(val))) updateStyle(prop, val + 'px');
         else updateStyle(prop, val);
     };
@@ -132,7 +132,7 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
             )}
 
             {/* LAYOUT */}
-            <div className="panel-section">
+            <div className="panel-section" key={`layout-${editTarget}`}>
                 <h4><Layout size={14} /> Layout <span style={{fontSize:'10px', opacity:0.5}}>({editTarget})</span></h4>
                 <div className="control-group">
                     <label>Display</label>
@@ -201,13 +201,14 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
             {/* DIMENSIONS */}
             <div className="panel-section">
                 <h4><Maximize size={14} /> Size</h4>
-                <div className="input-row">
+                <div className="input-row" key={`size-${editTarget}`}>
                     <div className="control-group">
                         <label>Width</label>
                         <input 
                             type="text" 
                             placeholder="auto"
-                            defaultValue={block.style.width}
+                            defaultValue={getSafeStyle('width') || getComputedValue('width')}
+                            onBlur={(e) => handleDimensionChange('width', e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('width', e.currentTarget.value)}
                         />
                     </div>
@@ -216,24 +217,21 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                         <input 
                             type="text" 
                             placeholder="auto"
-                            defaultValue={block.style.height}
+                            defaultValue={getSafeStyle('height') || getComputedValue('height')}
+                            onBlur={(e) => handleDimensionChange('height', e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('height', e.currentTarget.value)}
                         />
                     </div>
                 </div>
-            </div>
-
-            {/* SPACING */}
-            <div className="panel-section">
-                <h4><BoxSelect size={14} /> Spacing</h4>
-                <div className="input-row">
+                <div className="input-row" key={`spacing-${editTarget}`}>
                     <div className="control-group">
-                        <label>Pad</label>
+                        <label>Padding</label>
                         <input 
                             type="text" 
                             placeholder="0px"
-                            defaultValue={block.style.padding}
-                            onBlur={(e) => updateStyle('padding', e.target.value)}
+                            defaultValue={getSafeStyle('padding') || getComputedValue('padding')}
+                            onBlur={(e) => handleDimensionChange('padding', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('padding', e.currentTarget.value)}
                         />
                     </div>
                     <div className="control-group">
@@ -241,15 +239,16 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                         <input 
                             type="text" 
                             placeholder="0px"
-                            defaultValue={block.style.margin}
-                            onBlur={(e) => updateStyle('margin', e.target.value)}
+                            defaultValue={getSafeStyle('margin') || getComputedValue('margin')}
+                            onBlur={(e) => handleDimensionChange('margin', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('margin', e.currentTarget.value)}
                         />
                     </div>
                 </div>
             </div>
 
             {/* TYPOGRAPHY */}
-            <div className="panel-section">
+            <div className="panel-section" key={`typography-${editTarget}`}>
                 <h4><Type size={14} /> Typography</h4>
                 <div className="control-group">
                     <div className="btn-group">
@@ -292,14 +291,22 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                                 value={rgbToHex(styles.color)} 
                                 onChange={(e) => updateStyle('color', e.target.value)}
                             />
+                            <button 
+                                className="transparent-btn" 
+                                title="Прозрачный"
+                                onClick={() => updateStyle('color', 'transparent')}
+                            >
+                                <Ban size={12} />
+                            </button>
                         </div>
                     </div>
                     <div className="control-group">
                         <label>Size</label>
                         <input 
                             type="text" 
-                            defaultValue={styles.fontSize} 
-                            onBlur={(e) => updateStyle('fontSize', e.target.value)}
+                            defaultValue={getSafeStyle('fontSize') || getComputedValue('fontSize')} 
+                            onBlur={(e) => handleDimensionChange('fontSize', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('fontSize', e.currentTarget.value)}
                             placeholder="16px"
                         />
                     </div>
@@ -307,7 +314,7 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
             </div>
 
             {/* APPEARANCE */}
-            <div className="panel-section">
+            <div className="panel-section" key={`appearance-${editTarget}`}>
                 <h4><PaintBucket size={14} /> Appearance</h4>
                 <div className="input-row">
                     <div className="control-group">
@@ -318,14 +325,22 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                                 value={rgbToHex(styles.backgroundColor)} 
                                 onChange={(e) => updateStyle('backgroundColor', e.target.value)}
                             />
+                            <button 
+                                className="transparent-btn" 
+                                title="Прозрачный"
+                                onClick={() => updateStyle('backgroundColor', 'transparent')}
+                            >
+                                <Ban size={12} />
+                            </button>
                         </div>
                     </div>
                     <div className="control-group">
                         <label>Radius</label>
                         <input 
                             type="text" 
-                            defaultValue={block.style.borderRadius} 
-                            onBlur={(e) => updateStyle('borderRadius', e.target.value)}
+                            defaultValue={getSafeStyle('borderRadius') || getComputedValue('borderRadius')} 
+                            onBlur={(e) => handleDimensionChange('borderRadius', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('borderRadius', e.currentTarget.value)}
                             placeholder="0px"
                         />
                     </div>
@@ -336,8 +351,9 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                         <input 
                             type="text" style={{ width: '40px' }}
                             placeholder="1px"
-                            defaultValue={block.style.borderWidth}
-                            onBlur={(e) => updateStyle('borderWidth', e.target.value)}
+                            defaultValue={getSafeStyle('borderWidth') || getComputedValue('borderWidth')}
+                            onBlur={(e) => handleDimensionChange('borderWidth', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDimensionChange('borderWidth', e.currentTarget.value)}
                         />
                         <select 
                             style={{ flex: 1 }}
@@ -349,12 +365,21 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                             <option value="dashed">Dashed</option>
                             <option value="dotted">Dotted</option>
                         </select>
-                        <div className="color-input-wrapper" style={{ width: '30px', padding: '2px' }}>
+                        <div className="color-input-wrapper" style={{ width: '45px', padding: '2px', display: 'flex', alignItems: 'center' }}>
                              <input 
                                 type="color" 
                                 value={rgbToHex(styles.borderColor)} 
                                 onChange={(e) => updateStyle('borderColor', e.target.value)}
+                                style={{ width: '20px' }}
                             />
+                            <button 
+                                className="transparent-btn" 
+                                title="Прозрачный"
+                                onClick={() => updateStyle('borderColor', 'transparent')}
+                                style={{ padding: '0', marginLeft: '2px' }}
+                            >
+                                <Ban size={10} />
+                            </button>
                         </div>
                     </div>
                 </div>

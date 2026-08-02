@@ -198,3 +198,21 @@
     border-color: var(--text-muted);
     color: var(--text-normal);
 }
+
+.transparent-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.transparent-btn:hover {
+    color: var(--text-normal);
+    background-color: rgba(255, 255, 255, 0.1);
+}

@@ -45,6 +45,43 @@ const hexToRgb = (hex: string): string => {
         : '68, 138, 255';
 };
 
+/** Auto-detect language based on simple heuristics (C++, C, Python, HTML, CSS, JavaScript) */
+const detectLanguage = (code: string): string => {
+    if (!code || code.trim() === '') return 'text';
+    
+    // HTML detection
+    if (/^\s*<!DOCTYPE html>/i.test(code) || /^\s*<html/i.test(code) || /^\s*<div/i.test(code)) {
+        return 'html';
+    }
+    
+    // C / C++ detection
+    if (code.includes('#include') || code.includes('int main(') || code.includes('std::cout') || code.includes('printf(')) {
+        if (code.includes('std::') || code.includes('iostream') || code.includes('vector<')) return 'cpp';
+        return 'c';
+    }
+    
+    // CSS detection
+    if (/body\s*{/i.test(code) || /\.[a-zA-Z0-9_-]+\s*{/i.test(code) || /#\w+\s*{/.test(code) || /margin:\s*\d/.test(code) || /padding:\s*\d/.test(code)) {
+        if (!code.includes('function') && !code.includes('def ')) {
+            return 'css';
+        }
+    }
+    
+    // Python detection
+    if (code.includes('def ') || code.includes('import ') || code.includes('print(') || /^\s*if __name__ == ['"]__main__['"]:/m.test(code) || code.includes('self.')) {
+        if (!code.includes('const ') && !code.includes('let ') && !code.includes('var ') && !code.includes(';')) {
+            return 'python';
+        }
+    }
+    
+    // JS detection
+    if (code.includes('const ') || code.includes('let ') || code.includes('function()') || code.includes('console.log') || code.includes('document.') || code.includes('=>')) {
+        return 'javascript';
+    }
+    
+    return 'text';
+};
+
 function rehypeSourceLine() {
   return (tree: any) => {
     visit(tree, 'element', (node: any) => {
@@ -351,8 +388,11 @@ const Callout = ({ children }: any) => {
         let language = match ? match[1].toLowerCase() : '';
         const trimmed = contentStr.trim();
         if (trimmed.startsWith('<!DOCTYPE html>') || trimmed.startsWith('<html') || trimmed.startsWith('<?xml')) language = 'markup';
+        if (language === 'auto') {
+            language = detectLanguage(trimmed);
+        }
         if (LANG_MAP[language]) language = LANG_MAP[language];
-        const shouldUseHighlighter = !!language;
+        const shouldUseHighlighter = !!language && language !== 'text';
 
         const handleCopy = async () => {
             try {
@@ -377,6 +417,10 @@ const Callout = ({ children }: any) => {
     // Component for rendering code blocks from saved HTML (with copy animation)
     const HtmlCodeBlock = ({ codeContent, language }: { codeContent: string; language: string }) => {
         const [copied, setCopied] = useState(false);
+        
+        if (language === 'auto') {
+            language = detectLanguage(codeContent.trim());
+        }
         const mappedLang = LANG_MAP[language] || language;
 
         const handleCopy = async () => {
@@ -506,6 +550,30 @@ const Callout = ({ children }: any) => {
         /** true — есть редактор рядом (Split Screen); false/undefined — чистый режим чтения */
         hasEditor?: boolean;
     }
+
+/** Extract text while converting block elements and <br> into newlines */
+const extractTextWithNewlines = (node: Node): string => {
+    let text = '';
+    const processNode = (n: Node) => {
+        if (n.nodeType === 3) {
+            text += n.textContent || '';
+        } else if (n.nodeType === 1) {
+            const el = n as HTMLElement;
+            const tagName = el.tagName.toLowerCase();
+            if (tagName === 'br') {
+                text += '\n';
+            } else if (tagName === 'div' || tagName === 'p' || tagName === 'li') {
+                if (text.length > 0 && !text.endsWith('\n')) text += '\n';
+                Array.from(el.childNodes).forEach(processNode);
+                if (text.length > 0 && !text.endsWith('\n')) text += '\n';
+            } else {
+                Array.from(el.childNodes).forEach(processNode);
+            }
+        }
+    };
+    processNode(node);
+    return text.replace(/\n$/, '');
+};
 
     export default function Preview({ content, filePath, allFiles, onFileSelect, designMode = false, onRegisterSave, onAutoSave, selectedBlocks, onSelectBlocks, rootPath: _rootPath, onRefresh, activeSourcePos: _activeSourcePos, onSelectSourcePos, hasEditor = false }: PreviewProps) {
 
@@ -913,31 +981,35 @@ const Callout = ({ children }: any) => {
                 if (isEmptyP || isBr) el.remove();
             });
 
-            // Fix nested code-block-wrappers: keep only the outermost, extract deepest code content
+            // Fix code-block-wrappers: extract text with newlines and rebuild them cleanly
             const codeWrappers = clone.querySelectorAll('.code-block-wrapper');
             codeWrappers.forEach(wrapper => {
-                // Check if this wrapper has nested code-block-wrappers inside
-                const nestedWrappers = wrapper.querySelectorAll('.code-block-wrapper');
-                if (nestedWrappers.length > 0) {
-                    // Find the deepest code element
-                    let deepest = wrapper;
-                    while (deepest.querySelector('.code-block-wrapper')) {
-                        deepest = deepest.querySelector('.code-block-wrapper')!;
-                    }
-                    
-                    // Get the actual code content from deepest level
-                    const codeEl = deepest.querySelector('code');
-                    const language = wrapper.getAttribute('data-language') || '';
-                    
-                    // Replace wrapper content with clean structure
-                    wrapper.innerHTML = '';
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'code-block-content';
-                    if (codeEl) {
-                        contentDiv.textContent = codeEl.textContent || '';
-                    }
-                    wrapper.appendChild(contentDiv);
-                    wrapper.setAttribute('data-language', language);
+                if (!clone.contains(wrapper)) return;
+                
+                let deepest = wrapper;
+                while (deepest.querySelector('.code-block-wrapper')) {
+                    deepest = deepest.querySelector('.code-block-wrapper') as HTMLElement;
+                }
+                
+                const codeEl = deepest.querySelector('code');
+                const contentWrapper = deepest.querySelector('.code-block-content');
+                const language = wrapper.getAttribute('data-language') || '';
+                
+                let codeText = extractTextWithNewlines(codeEl || contentWrapper || deepest);
+                
+                // Replace wrapper content with clean structure
+                wrapper.innerHTML = '';
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'code-block-content';
+                contentDiv.textContent = codeText; // Automatically escapes <, >, & safely
+                wrapper.appendChild(contentDiv);
+                wrapper.setAttribute('data-language', language);
+                
+                // Wrap in <pre> to preserve whitespace when parsed by react-markdown later
+                if (wrapper.parentElement && wrapper.parentElement.tagName !== 'PRE') {
+                    const pre = document.createElement('pre');
+                    wrapper.parentElement.insertBefore(pre, wrapper);
+                    pre.appendChild(wrapper);
                 }
             });
 
@@ -995,13 +1067,14 @@ const Callout = ({ children }: any) => {
                                  // Try to find the content wrapper first (new structure)
                                  const contentWrapper = element.querySelector('.code-block-content');
                                  if (contentWrapper) {
-                                     codeText = contentWrapper.textContent || '';
+                                     const codeEl = contentWrapper.querySelector('code');
+                                     codeText = extractTextWithNewlines(codeEl || contentWrapper);
                                  } else {
                                      // Fallback: iterate children and skip header (legacy support)
                                      element.childNodes.forEach((child) => {
                                          const el = child as HTMLElement;
                                          if (el.nodeType === 1 && !el.classList.contains('code-block-header')) {
-                                             codeText += el.textContent;
+                                             codeText += extractTextWithNewlines(el);
                                          }
                                      });
                                  }
@@ -1056,27 +1129,6 @@ const Callout = ({ children }: any) => {
                             emDelimiter: '*'
                         });
 
-                        // Custom rule for Code Blocks - preserve as HTML to avoid markdown interpretation issues
-                        turndownService.addRule('syntaxHighlighter', {
-                            filter: (node) => node.classList.contains('code-block-wrapper'),
-                            replacement: (_content, node) => {
-                                const element = node as HTMLElement;
-                                const language = element.getAttribute('data-language') || '';
-                                const contentWrapper = element.querySelector('.code-block-content');
-                                // Get the deepest code element or text content
-                                const codeEl = contentWrapper?.querySelector('code');
-                                let codeText = codeEl ? codeEl.textContent || '' : (contentWrapper ? contentWrapper.textContent || '' : element.textContent || '');
-                                // Escape HTML special chars and markdown # at line start
-                                codeText = codeText
-                                    .replace(/&/g, '&amp;')
-                                    .replace(/</g, '&lt;')
-                                    .replace(/>/g, '&gt;')
-                                    .replace(/^#/gm, '&#35;');  // Escape # at start of any line
-                                // Return as HTML pre/code to prevent markdown interpretation
-                                return `<pre><div class="code-block-wrapper" data-language="${language}" style="position: relative;"><div class="code-block-content">${codeText}</div></div></pre>`;
-                            }
-                        });
-
                         turndownService.addRule('image', {
                             filter: 'img',
                             replacement: function (_content, node) {
@@ -1095,7 +1147,7 @@ const Callout = ({ children }: any) => {
                             }
                         });
 
-                        turndownService.keep(['div', 'span', 'table', 'tbody', 'tr', 'td', 'th', 'font', 'video', 'br'] as any);
+                        turndownService.keep(['div', 'span', 'table', 'tbody', 'tr', 'td', 'th', 'font', 'video', 'br', 'pre'] as any);
 
                         const markdown = turndownService.turndown(html);
                         

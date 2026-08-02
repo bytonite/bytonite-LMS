@@ -1,7 +1,7 @@
 {
   "name": "obsidian-clone",
   "private": true,
-  "version": "1.21.0",
+  "version": "1.22.0",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\"",
@@ -19,6 +19,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/turndown": "^5.0.6",
     "codemirror": "^6.0.1",
+    "jsdom": "^29.1.1",
     "lucide-react": "^0.300.0",
     "mp4box": "^2.4.1",
     "prettier": "^3.9.6",

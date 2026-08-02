@@ -93,11 +93,12 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                         handle.className = 'custom-drag-handle hover-drag-handle';
                         handle.contentEditable = 'false';
                         handle.draggable = true;
+                        const isCodeBlock = child.classList.contains('code-block-wrapper');
                         Object.assign(handle.style, {
                             position: 'absolute',
-                            right: '12px',
-                            top: '12px',
-                            width: '24px',
+                            right: isCodeBlock ? '120px' : '12px',
+                            top: isCodeBlock ? '-12px' : '12px',
+                            width: '32px',
                             height: '24px',
                             display: 'flex',
                             alignItems: 'center',
