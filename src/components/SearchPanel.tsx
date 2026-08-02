@@ -60,8 +60,19 @@ export default function SearchPanel({ rootPath, onFileSelect, externalQuery, onQ
         
         try {
             const searchResults = await window.electronAPI.searchFiles(rootPath, searchQuery);
-            setResults(searchResults);
-            if (searchResults.length === 0) {
+            
+            // Filter out ignored directories in case the backend hasn't been restarted with the new logic
+            const filteredResults = searchResults.filter((r: any) => {
+                const normalizedPath = r.path.replace(/\\/g, '/').toLowerCase();
+                return !normalizedPath.includes('/node_modules/') && 
+                       !normalizedPath.includes('/.git/') && 
+                       !normalizedPath.includes('/dist/') && 
+                       !normalizedPath.includes('/build/') &&
+                       !normalizedPath.includes('/.vscode/');
+            });
+            
+            setResults(filteredResults);
+            if (filteredResults.length === 0) {
                 setError('Ничего не найдено');
             }
         } catch (error) {
