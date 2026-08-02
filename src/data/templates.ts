@@ -73,6 +73,14 @@ export const templates: Template[] = [
         icon: 'Layout',
         content: `<div class="dashboard-grid"><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-6"></div><div class="grid-cell grid-span-6"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div><div class="grid-cell grid-span-3"></div></div>`
     },
+    // --- Callouts (from Obsidian) ---
+    {
+        id: 'callout-blank',
+        name: 'Текст (Без фона)',
+        description: 'Просто текст или заголовок',
+        icon: 'Type',
+        content: `> [!blank] Заголовок\n> Ваш текст здесь`
+    },
     // --- From Demo (Primary) ---
     {
         id: 'callout-note',

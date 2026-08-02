@@ -340,6 +340,15 @@
 
 /* --- CARD SPECIFIC STYLES (from cards.html) --- */
 
+/* BLANK / TEXT (Transparent) */
+.callout-blank {
+    background-color: transparent !important;
+    --callout-color: var(--text-normal);
+}
+.callout-blank .callout-title {
+    color: var(--text-normal) !important;
+}
+
 /* INFO / NOTE (Sky Blue - unique) */
 .callout-info, .callout-note {
     background-color: rgb(25, 40, 55);

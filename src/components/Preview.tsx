@@ -278,7 +278,7 @@ const Callout = ({ children }: any) => {
         cite: <Copy size="1.1em" />
     };
 
-    const IconElement = svgIcons[type] || svgIcons.note;
+    const IconElement = type === 'blank' ? null : (svgIcons[type] || svgIcons.note);
     
     const color = CALLOUT_COLOR_MAP[type] || '#448aff';
     const rgbColor = hexToRgb(color);
@@ -293,7 +293,7 @@ const Callout = ({ children }: any) => {
             }}
         >
             <div className="callout-title" onClick={toggle}>
-                 <div className="callout-icon">{IconElement}</div>
+                 {IconElement && <div className="callout-icon">{IconElement}</div>}
                  <div className="callout-title-inner">{title}</div>
                  {suffix && (
                      <div className="callout-fold">
