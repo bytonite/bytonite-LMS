@@ -739,18 +739,22 @@ const Callout = ({ children }: any) => {
                 return;
             }
             if (editableRef.current && editableRef.current.contains(target) && target !== editableRef.current) {
-                let blockElement = target.closest('.draggable-block');
+                let blockElement = target.closest('.draggable-block') as HTMLElement;
                 if (!blockElement) {
                      // Fallback for elements that might not have the class yet
-                     blockElement = target.closest('.code-block-wrapper, .callout, table, p, h1, h2, h3, h4, h5, h6, li, blockquote, img, video, hr, .grid-cell');
+                     blockElement = target.closest('.code-block-wrapper, .callout, table, p, h1, h2, h3, h4, h5, h6, li, blockquote, img, video, hr, .grid-cell, .dashboard-grid') as HTMLElement;
                 }
                 
-                // If user clicked inside an empty grid cell (or on the cell itself), select the cell.
-                const cellElement = target.closest('.grid-cell') as HTMLElement;
-                if (cellElement && editableRef.current.contains(cellElement)) {
-                    target = cellElement;
-                } else if (blockElement && editableRef.current.contains(blockElement)) {
-                    target = blockElement as HTMLElement;
+                // Select the specific block they clicked on (e.g. callout inside cell). 
+                // If they clicked empty space in a cell, blockElement will be the .grid-cell itself.
+                if (blockElement && editableRef.current.contains(blockElement)) {
+                    target = blockElement;
+                } else {
+                    // Fallback just in case
+                    const cellElement = target.closest('.grid-cell') as HTMLElement;
+                    if (cellElement && editableRef.current.contains(cellElement)) {
+                        target = cellElement;
+                    }
                 }
 
                 e.stopPropagation();
