@@ -3,6 +3,7 @@
     background-color: var(--background-secondary);
     border-left: 1px solid var(--border-subtle);
     width: 280px; /* Slightly wider for better inputs */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
