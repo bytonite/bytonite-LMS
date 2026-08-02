@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout, Columns, Code, FileText, GripVertical, Calendar, Zap, CheckSquare, Image as ImageIcon } from 'lucide-react';
 import { templates, Template } from '../data/templates';
 
@@ -22,6 +22,33 @@ const iconMap: Record<string, any> = {
 export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarProps) {
     const [localTemplates, setLocalTemplates] = useState<Template[]>(templates);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [width, setWidth] = useState(250);
+    const [isResizing, setIsResizing] = useState(false);
+    const sidebarRef = useRef<HTMLDivElement>(null);
+
+    // Resizing logic
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isResizing || !sidebarRef.current) return;
+            const sidebarRect = sidebarRef.current.getBoundingClientRect();
+            const newWidth = e.clientX - sidebarRect.left;
+            setWidth(Math.max(200, Math.min(800, newWidth)));
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+        };
+
+        if (isResizing) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
 
     // Load custom templates from workspace
     React.useEffect(() => {
@@ -157,33 +184,42 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
     };
 
     return (
-        <div 
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{
-            width: '250px',
-            height: '100%',
-            borderRight: '1px solid var(--border-subtle)',
-            backgroundColor: isDragOver ? 'rgba(68, 138, 255, 0.05)' : 'var(--background-secondary)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            transition: 'background-color 0.2s ease'
-        }}>
-            <div style={{
-                padding: '10px 16px',
-                fontSize: '11px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-                borderBottom: '1px solid var(--border-subtle)'
-            }}>
-                Шаблоны (Drag & Drop)
-            </div>
-            
-            <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {localTemplates.map(template => {
+        <div style={{ display: 'flex', height: '100%', flexShrink: 0 }}>
+            <div 
+                ref={sidebarRef}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{
+                    width: `${width}px`,
+                    height: '100%',
+                    backgroundColor: isDragOver ? 'rgba(68, 138, 255, 0.05)' : 'var(--background-secondary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    transition: isResizing ? 'none' : 'background-color 0.2s ease'
+                }}
+            >
+                <div style={{
+                    padding: '10px 16px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    color: 'var(--text-muted)',
+                    borderBottom: '1px solid var(--border-subtle)'
+                }}>
+                    Шаблоны (Drag & Drop)
+                </div>
+                
+                <div style={{ 
+                    padding: '8px', 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+                    gap: '8px',
+                    alignContent: 'start'
+                }}>
+                    {localTemplates.map(template => {
                     const Icon = iconMap[template.icon] || FileText;
                     return (
                         <div
@@ -229,6 +265,26 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
             <div style={{ marginTop: 'auto', padding: '16px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 {isDragOver ? 'Отпустите, чтобы сохранить шаблон' : 'Перетащите блок сюда для сохранения, или шаблон в редактор'}
             </div>
+            </div>
+            
+            {/* Resizer Handle */}
+            <div 
+                onMouseDown={() => setIsResizing(true)}
+                style={{
+                    width: '4px',
+                    cursor: 'col-resize',
+                    backgroundColor: isResizing ? 'var(--interactive-accent)' : 'transparent',
+                    borderRight: '1px solid var(--border-subtle)',
+                    transition: 'background-color 0.2s',
+                    zIndex: 10
+                }}
+                onMouseEnter={(e) => {
+                    if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--border-subtle)';
+                }}
+                onMouseLeave={(e) => {
+                    if (!isResizing) e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+            />
         </div>
     );
 }
