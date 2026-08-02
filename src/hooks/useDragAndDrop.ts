@@ -461,15 +461,28 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                     targetElement.after(finalItem);
                 }
             }
-            else if (insertionType === 'left' || insertionType === 'right') {
-                // Auto-Column Creation
-                const parent = targetElement.parentElement;
-                
-                // Check if already in a flex row
-                if (parent && parent.classList.contains('flex-row')) {
-                    if (itemToDrop instanceof HTMLElement) {
-                        // If item doesn't have an explicit flex or width set, give it flex-1
-                        if (!itemToDrop.style.flex && !itemToDrop.style.width) {
+              else if (insertionType === 'left' || insertionType === 'right') {
+                  // Auto-Column Creation
+                  const parent = targetElement.parentElement;
+                  
+                  if (parent && parent.classList.contains('dashboard-grid')) {
+                      // Grid natively handles columns, so treat left/right as before/after
+                      let finalItem = itemToDrop;
+                      if (itemToDrop instanceof HTMLElement && !itemToDrop.classList.contains('grid-cell')) {
+                          const cell = document.createElement('div');
+                          // Default to span 6 to fill half the 12-column grid
+                          cell.className = 'grid-cell resizable';
+                          cell.appendChild(itemToDrop);
+                          finalItem = cell;
+                      }
+                      if (insertionType === 'left') targetElement.before(finalItem);
+                      else targetElement.after(finalItem);
+                  }
+                  // Check if already in a flex row
+                  else if (parent && parent.classList.contains('flex-row')) {
+                      if (itemToDrop instanceof HTMLElement) {
+                          // If item doesn't have an explicit flex or width set, give it flex-1
+                          if (!itemToDrop.style.flex && !itemToDrop.style.width) {
                             itemToDrop.style.flex = '1 1 0%';
                             itemToDrop.style.minWidth = '0px';
                         }
