@@ -280,6 +280,7 @@
     margin-bottom: 0;
     user-select: none;
     min-height: 24px;
+    text-align: left;
 }
 
 .callout[data-collapsible="true"] .callout-title {

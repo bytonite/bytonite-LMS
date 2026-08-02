@@ -204,21 +204,28 @@ const Callout = ({ children }: any) => {
 
             if (isValidElement(firstChild) && (firstChild.props as any).children) {
                 const pContent = (firstChild.props as any).children;
-                if (typeof pContent === 'string') {
-                    let bodyContent = pContent;
-                    if (bodyContent.includes(match[0])) {
-                        const afterTag = bodyContent.split(match[0])[1] || '';
+                const contentArray = Array.isArray(pContent) ? pContent : [pContent];
+                
+                let processedContent: React.ReactNode[] = [];
+                let matchFound = false;
+                
+                contentArray.forEach(child => {
+                    if (!matchFound && typeof child === 'string' && child.includes(match![0])) {
+                        matchFound = true;
+                        const afterTag = child.split(match![0])[1] || '';
+                        let text = afterTag;
                         if (rawTitle && afterTag.trim().startsWith(rawTitle)) {
-                            bodyContent = afterTag.replace(rawTitle, '').trim();
+                            text = afterTag.replace(rawTitle, '').trim();
                         } else {
-                            bodyContent = afterTag.trim();
+                            text = afterTag.trim();
                         }
+                        if (text.length > 0) processedContent.push(text);
+                    } else if (matchFound) {
+                        processedContent.push(child);
                     }
-                    if (bodyContent.length > 0) validPChildren = [bodyContent];
-                    else validPChildren = [];
-                } else {
-                    validPChildren = [];
-                }
+                });
+                
+                validPChildren = processedContent;
             } else {
                 validPChildren = [];
             }
@@ -977,6 +984,15 @@ const Callout = ({ children }: any) => {
                              }
                          });
 
+                         // Custom rule to preserve <p> tags if they have inline styles
+                         turndownService.addRule('styledParagraphs', {
+                             filter: (node) => node.nodeName === 'P' && node.hasAttribute('style'),
+                             replacement: (content, node) => {
+                                 const style = (node as HTMLElement).getAttribute('style');
+                                 return `\n\n<p style="${style}">${content}</p>\n\n`;
+                             }
+                         });
+
                          // Preserve standard HTML tags for layout (Moved to end to allow custom rules to fire first)
                          turndownService.keep(['div', 'span', 'table', 'tbody', 'tr', 'td', 'th', 'font', 'video'] as any);
 
@@ -1041,6 +1057,15 @@ const Callout = ({ children }: any) => {
                                 const alt = (node as Element).getAttribute('alt') || '';
                                 const src = (node as Element).getAttribute('src') || '';
                                 return src ? `![${alt}](<${src}>)` : '';
+                            }
+                        });
+
+                        // Custom rule to preserve <p> tags if they have inline styles
+                        turndownService.addRule('styledParagraphs', {
+                            filter: (node) => node.nodeName === 'P' && node.hasAttribute('style'),
+                            replacement: (content, node) => {
+                                const style = (node as HTMLElement).getAttribute('style');
+                                return `\n\n<p style="${style}">${content}</p>\n\n`;
                             }
                         });
 
