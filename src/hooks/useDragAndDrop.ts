@@ -61,6 +61,10 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
        if (indicator) indicator.style.display = 'none';
        targetElement = null;
        insertionType = null;
+       
+       // Clean up any stray hover handles that might have been left behind
+       const strayHandles = container.querySelectorAll('.hover-drag-handle');
+       strayHandles.forEach(h => h.remove());
     };
 
     // Recursively make elements draggable
@@ -127,6 +131,7 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                     }
                 });
                 child.addEventListener('mouseleave', (e: MouseEvent) => {
+                    if (draggedItem) return; // Prevent removing handle during active drag
                     const handle = child.querySelector('.hover-drag-handle');
                     if (handle && (!e.relatedTarget || !child.contains(e.relatedTarget as Node))) {
                         handle.remove();
