@@ -745,8 +745,10 @@ const Callout = ({ children }: any) => {
             const items = e.clipboardData?.items;
             if (!items) return;
 
+            let hasImage = false;
             for (const item of Array.from(items)) {
                 if (item.type.startsWith('image/')) {
+                    hasImage = true;
                     e.preventDefault();
                     const blob = item.getAsFile();
                     if (!blob) continue;
@@ -781,6 +783,29 @@ const Callout = ({ children }: any) => {
                     } catch (err) {
                         console.error('Failed to paste image:', err);
                     }
+                }
+            }
+            
+            // Intercept HTML paste to strip foreign background colors and styles injected by browsers
+            if (!hasImage && e.clipboardData?.types.includes('text/html')) {
+                const html = e.clipboardData.getData('text/html');
+                if (html) {
+                    e.preventDefault();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    doc.body.querySelectorAll('*').forEach(el => {
+                        if (el instanceof HTMLElement) {
+                            el.style.backgroundColor = '';
+                            el.style.color = '';
+                            el.style.fontFamily = '';
+                            el.style.fontSize = '';
+                            el.style.lineHeight = '';
+                            if (el.getAttribute('style') === '') {
+                                el.removeAttribute('style');
+                            }
+                        }
+                    });
+                    document.execCommand('insertHTML', false, doc.body.innerHTML);
                 }
             }
         };
