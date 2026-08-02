@@ -717,8 +717,7 @@ video.resizable,
 }
 /* Если в ячейку добавлен коллаут, он заполняет её целиком */
 .grid-cell .callout {
-    flex: 1;
-    min-height: 100%;
+    flex-grow: 1;
     width: 100% !important;
     margin: 0 !important;
     border-radius: 0 !important;
