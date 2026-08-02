@@ -10,6 +10,7 @@ import { normalizePath, getBasename } from '../utils/path';
 import { setupResize } from '../hooks/useResize';
 import { setupDragAndDrop } from '../hooks/useDragAndDrop';
 import { setupInteractions } from '../hooks/useInteractions';
+import TextToolbar from './TextToolbar';
 import TurndownService from 'turndown';
 import { visit } from 'unist-util-visit';
 
@@ -1318,20 +1319,23 @@ const Callout = ({ children }: any) => {
             <div className="markdown-content-wrapper" style={{ position: 'relative' }}>
 
                 {designMode && (
-                    <div 
-                        onClick={handleBlockClick}
-                        ref={editableRef}
-                        className="design-mode-container"
-                        contentEditable
-                        suppressContentEditableWarning
-                        style={{
-                            outline: '2px solid var(--interactive-accent)',
-                            minHeight: '200px',
-                            padding: '10px',
-                            borderRadius: '4px',
-                            backgroundColor: 'var(--background-primary)'
-                        }}
-                    />
+                    <>
+                        <div 
+                            onClick={handleBlockClick}
+                            ref={editableRef}
+                            className="design-mode-container"
+                            contentEditable
+                            suppressContentEditableWarning
+                            style={{
+                                outline: '2px solid var(--interactive-accent)',
+                                minHeight: '200px',
+                                padding: '10px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--background-primary)'
+                            }}
+                        />
+                        <TextToolbar containerRef={editableRef} designMode={designMode} />
+                    </>
                 )}
 
                 <div ref={previewRef} style={{ display: designMode ? 'none' : 'block' }} onClick={handleBlockClick}>

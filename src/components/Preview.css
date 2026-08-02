@@ -696,6 +696,7 @@ video.resizable,
     width: 100%;
     margin-bottom: 1em;
     min-width: 0;
+    padding: 10px 0; /* padding provides a drop zone above/below the grid */
 }
 
 .grid-cell {

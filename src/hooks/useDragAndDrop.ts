@@ -171,6 +171,8 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
     const onDragStart = (e: any) => {
         if (container.contentEditable !== 'true') return;
         let target = e.target as HTMLElement;
+        if (target && target.nodeType === 3) target = target.parentElement as HTMLElement;
+
         if (target.classList.contains('custom-drag-handle')) {
             draggedItem = target.parentElement as HTMLElement;
         } else {
@@ -202,7 +204,8 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
         e.preventDefault();
         e.stopPropagation();
 
-        const target = e.target as HTMLElement;
+        let target = e.target as HTMLElement;
+        if (target && target.nodeType === 3) target = target.parentElement as HTMLElement;
         
         // Find best target block
         let block = target.closest('.draggable-block') as HTMLElement;
