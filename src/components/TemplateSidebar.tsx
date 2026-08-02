@@ -21,6 +21,7 @@ const iconMap: Record<string, any> = {
 
 export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarProps) {
     const [localTemplates, setLocalTemplates] = useState<Template[]>(templates);
+    const [filter, setFilter] = useState<'all' | 'grid' | 'callout' | 'custom'>('all');
     const [isDragOver, setIsDragOver] = useState(false);
     const [width, setWidth] = useState(250);
     const [isResizing, setIsResizing] = useState(false);
@@ -183,6 +184,14 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
         }
     };
 
+    const filteredTemplates = localTemplates.filter(t => {
+        if (filter === 'all') return true;
+        if (filter === 'grid') return t.id.startsWith('grid-');
+        if (filter === 'callout') return t.id.startsWith('callout-');
+        if (filter === 'custom') return t.id.startsWith('custom-');
+        return true;
+    });
+
     return (
         <div style={{ display: 'flex', height: '100%', flexShrink: 0 }}>
             <div 
@@ -202,14 +211,41 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
                 }}
             >
                 <div style={{
-                    padding: '10px 16px',
+                    padding: '10px 16px 5px',
                     fontSize: '11px',
                     fontWeight: 600,
                     textTransform: 'uppercase',
-                    color: 'var(--text-muted)',
-                    borderBottom: '1px solid var(--border-subtle)'
+                    color: 'var(--text-muted)'
                 }}>
                     Шаблоны (Drag & Drop)
+                </div>
+
+                <div style={{ padding: '0 16px 10px', display: 'flex', gap: '4px', flexWrap: 'wrap', borderBottom: '1px solid var(--border-subtle)' }}>
+                    {([
+                        { id: 'all', label: 'Все' },
+                        { id: 'grid', label: 'Сетки' },
+                        { id: 'callout', label: 'Коллауты' },
+                        { id: 'custom', label: 'Свои' }
+                    ] as const).map(f => (
+                        <button
+                            key={f.id}
+                            onClick={() => setFilter(f.id)}
+                            style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                borderRadius: '6px',
+                                border: '1px solid',
+                                borderColor: filter === f.id ? 'var(--interactive-accent)' : 'var(--border-subtle)',
+                                cursor: 'pointer',
+                                backgroundColor: filter === f.id ? 'var(--interactive-accent)' : 'var(--background-primary)',
+                                color: filter === f.id ? '#fff' : 'var(--text-normal)',
+                                transition: 'all 0.15s ease'
+                            }}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
                 </div>
                 
                 <div style={{ 
@@ -219,7 +255,7 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
                     gap: '8px',
                     alignContent: 'start'
                 }}>
-                    {localTemplates.map(template => {
+                    {filteredTemplates.map(template => {
                     const Icon = iconMap[template.icon] || FileText;
                     return (
                         <div
