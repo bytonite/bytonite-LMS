@@ -91,7 +91,7 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                         handle.draggable = true;
                         Object.assign(handle.style, {
                             position: 'absolute',
-                            left: '12px',
+                            right: '12px',
                             top: '12px',
                             width: '24px',
                             height: '24px',
