@@ -212,6 +212,26 @@ export default function SearchPanel({ rootPath, onFileSelect, externalQuery, onQ
                                     {fileName.replace(`.${ext}`, '')}
                                 </span>
                             </div>
+
+                            {/* Render text snippets (matches) */}
+                            {result.matches && result.matches.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                    {result.matches.map((match: string, mIdx: number) => (
+                                        <div key={mIdx} style={{
+                                            fontSize: '11px',
+                                            color: 'var(--text-muted)',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            background: 'rgba(0,0,0,0.2)',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px'
+                                        }}>
+                                            {match}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })}
