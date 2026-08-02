@@ -317,6 +317,8 @@
 .callout-content {
     padding: 0 16px 16px 16px;
     color: var(--text-normal);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .callout-content p {
@@ -715,7 +717,8 @@ video.resizable,
 }
 /* Если в ячейку добавлен коллаут, он заполняет её целиком */
 .grid-cell .callout {
-    height: 100% !important;
+    flex: 1;
+    min-height: 100%;
     width: 100% !important;
     margin: 0 !important;
     border-radius: 0 !important;
