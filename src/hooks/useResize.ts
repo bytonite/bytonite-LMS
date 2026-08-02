@@ -60,6 +60,12 @@ export const setupResize = (container: HTMLElement) => {
     // Initial setup
     applyResizeToElements();
     
+    // Smart guides state
+    let horizontalGuide: HTMLElement | null = null;
+    let verticalGuide: HTMLElement | null = null;
+    let snapTargets: { el: HTMLElement, rect: DOMRect }[] = [];
+    const SNAP_THRESHOLD = 8;
+    
     // Resize state
     let isResizing = false;
     let currentElement: HTMLElement | null = null;
@@ -101,6 +107,14 @@ export const setupResize = (container: HTMLElement) => {
                     }
                 });
             }
+            
+            // Populate snap targets
+            snapTargets = [];
+            container.querySelectorAll('.resizable').forEach(el => {
+                if (el !== currentElement) {
+                    snapTargets.push({ el: el as HTMLElement, rect: el.getBoundingClientRect() });
+                }
+            });
             
             currentElement.classList.add('resizing');
             document.body.style.cursor = getComputedStyle(target).cursor;
@@ -150,6 +164,77 @@ export const setupResize = (container: HTMLElement) => {
                  newWidth = Math.max(minSize, startWidth - dx);
                  newHeight = Math.max(minSize, startHeight - dy);
                  break;
+        }
+        
+        // Smart Snapping Logic
+        let snappedHeight = false;
+        let snappedWidth = false;
+        let guideY = 0;
+        let guideX = 0;
+        
+        const currentRect = currentElement.getBoundingClientRect();
+        
+        // Height Snapping (bottom edge)
+        if (['s', 'se', 'sw'].includes(currentHandle)) {
+            const proposedBottom = currentRect.top + newHeight;
+            for (const target of snapTargets) {
+                if (Math.abs(proposedBottom - target.rect.bottom) < SNAP_THRESHOLD) {
+                    newHeight = target.rect.bottom - currentRect.top;
+                    snappedHeight = true;
+                    guideY = target.rect.bottom;
+                    break;
+                }
+                if (Math.abs(proposedBottom - target.rect.top) < SNAP_THRESHOLD) {
+                    newHeight = target.rect.top - currentRect.top;
+                    snappedHeight = true;
+                    guideY = target.rect.top;
+                    break;
+                }
+            }
+        }
+        
+        // Width Snapping (right edge)
+        if (['e', 'se', 'ne'].includes(currentHandle) && !currentElement.classList.contains('grid-cell')) {
+            const proposedRight = currentRect.left + newWidth;
+            for (const target of snapTargets) {
+                if (Math.abs(proposedRight - target.rect.right) < SNAP_THRESHOLD) {
+                    newWidth = target.rect.right - currentRect.left;
+                    snappedWidth = true;
+                    guideX = target.rect.right;
+                    break;
+                }
+                if (Math.abs(proposedRight - target.rect.left) < SNAP_THRESHOLD) {
+                    newWidth = target.rect.left - currentRect.left;
+                    snappedWidth = true;
+                    guideX = target.rect.left;
+                    break;
+                }
+            }
+        }
+        
+        // Render guides
+        if (snappedHeight) {
+            if (!horizontalGuide) {
+                horizontalGuide = document.createElement('div');
+                horizontalGuide.className = 'smart-guide horizontal';
+                document.body.appendChild(horizontalGuide);
+            }
+            horizontalGuide.style.top = `${guideY + window.scrollY}px`;
+        } else if (horizontalGuide) {
+            horizontalGuide.remove();
+            horizontalGuide = null;
+        }
+        
+        if (snappedWidth) {
+            if (!verticalGuide) {
+                verticalGuide = document.createElement('div');
+                verticalGuide.className = 'smart-guide vertical';
+                document.body.appendChild(verticalGuide);
+            }
+            verticalGuide.style.left = `${guideX + window.scrollX}px`;
+        } else if (verticalGuide) {
+            verticalGuide.remove();
+            verticalGuide = null;
         }
         
         // For images and videos, maintain aspect ratio when using corner handles
@@ -207,6 +292,17 @@ export const setupResize = (container: HTMLElement) => {
             currentElement = null;
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
+            
+            // Clean up guides
+            if (horizontalGuide) {
+                horizontalGuide.remove();
+                horizontalGuide = null;
+            }
+            if (verticalGuide) {
+                verticalGuide.remove();
+                verticalGuide = null;
+            }
+            snapTargets = [];
         }
     };
     

@@ -875,3 +875,24 @@ video.resizable,
     outline-offset: 4px !important;
     box-shadow: 0 0 0 2px #44c868, 0 0 10px rgba(68, 200, 104, 0.3) !important;
 }
+
+/* Smart Guides for Resizing */
+.smart-guide {
+    position: absolute;
+    background-color: var(--interactive-accent, #44c868);
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.smart-guide.horizontal {
+    height: 1px;
+    left: 0;
+    right: 0;
+}
+
+.smart-guide.vertical {
+    width: 1px;
+    top: 0;
+    bottom: 0;
+}
