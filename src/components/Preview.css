@@ -680,6 +680,7 @@ video.resizable,
     gap: 16px;
     width: 100%;
     margin-bottom: 1em;
+    min-width: 0;
 }
 
 .grid-cell {
@@ -691,11 +692,13 @@ video.resizable,
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: grid-column 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    min-width: 0;
 }
 
-/* Убеждаемся, что вложенные элементы адаптивны */
+/* Убеждаемся, что вложенные элементы адаптивны и могут сжиматься */
 .grid-cell > * {
     max-width: 100%;
+    min-width: 0;
 }
 /* Если в ячейку добавлен коллаут, он заполняет её целиком */
 .grid-cell .callout {
