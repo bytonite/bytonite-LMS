@@ -173,6 +173,11 @@ ipcMain.handle('search-files', async (_event, rootPath, query) => {
         try {
             const entries = await fs.readdir(dirPath, { withFileTypes: true });
             for (const entry of entries) {
+                // Skip ignored directories to avoid finding 100s of module CHANGELOGs/READMEs
+                if (['node_modules', '.git', 'dist', 'build', 'out', '.vscode'].includes(entry.name)) {
+                    continue;
+                }
+                
                 const fullPath = path.join(dirPath, entry.name);
                 if (entry.isDirectory()) {
                     await searchDir(fullPath);
