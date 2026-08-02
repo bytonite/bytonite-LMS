@@ -598,14 +598,18 @@ function App() {
               </div>
           )}
         </main>
-      {/* Properties Panel (Right Sidebar) */}
-      {designMode && selectedBlocks.length > 0 && (
-           <PropertiesPanel 
-               blocks={selectedBlocks} 
-               onUpdate={() => setSelectedBlocks(prev => [...prev])} // Force re-render if needed
-               onBlockDelete={() => setSelectedBlocks([])}
-           />
-      )}
+        {/* Properties Panel (Right Sidebar) */}
+        {designMode && selectedBlocks.length > 0 && (
+             <PropertiesPanel 
+                 key={selectedBlocks.map(b => {
+                     if (!b.dataset.designId) b.dataset.designId = Math.random().toString(36).substring(2, 9);
+                     return b.dataset.designId;
+                 }).join(',')}
+                 blocks={selectedBlocks} 
+                 onUpdate={() => setSelectedBlocks(prev => [...prev])} // Force re-render if needed
+                 onBlockDelete={() => setSelectedBlocks([])}
+             />
+        )}
       </div>
       <StatusBar 
         wordCount={editorStats.words} 
