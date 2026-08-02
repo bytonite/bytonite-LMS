@@ -79,7 +79,7 @@ export const templates: Template[] = [
         name: 'Текст (Без фона)',
         description: 'Просто текст или заголовок',
         icon: 'Type',
-        content: `> [!blank] Заголовок\n> Ваш текст здесь`
+        content: `> [!blank]\n> Ваш текст здесь`
     },
     // --- From Demo (Primary) ---
     {

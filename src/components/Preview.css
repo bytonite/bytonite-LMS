@@ -346,7 +346,10 @@
     --callout-color: var(--text-normal);
 }
 .callout-blank .callout-title {
-    color: var(--text-normal) !important;
+    display: none;
+}
+.callout-blank .callout-content {
+    padding: 16px;
 }
 
 /* INFO / NOTE (Sky Blue - unique) */
