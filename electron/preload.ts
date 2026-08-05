@@ -15,5 +15,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     copyFile: (src: string, dest: string) => ipcRenderer.invoke('copy-file', src, dest),
     saveBlob: (dest: string, buffer: number[]) => ipcRenderer.invoke('save-blob', dest, buffer),
     openExternal: (path: string) => ipcRenderer.invoke('open-external', path),
-    renamePath: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename-path', oldPath, newPath)
+    renamePath: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename-path', oldPath, newPath),
+    executeCode: (language: string, code: string) => ipcRenderer.invoke('execute-code', language, code)
 });

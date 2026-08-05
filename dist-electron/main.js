@@ -179,6 +179,8 @@ electron_1.ipcMain.handle('read-file', function (_event, filePath) { return __aw
             case 1: return [2 /*return*/, _a.sent()];
             case 2:
                 error_2 = _a.sent();
+                if (error_2.code === 'ENOENT')
+                    return [2 /*return*/, null];
                 throw error_2;
             case 3: return [2 /*return*/];
         }
@@ -326,6 +328,10 @@ electron_1.ipcMain.handle('search-files', function (_event, rootPath, query) { r
                             case 2:
                                 if (!(_i < entries_1.length)) return [3 /*break*/, 7];
                                 entry = entries_1[_i];
+                                // Skip ignored directories to avoid finding 100s of module CHANGELOGs/READMEs
+                                if (['node_modules', '.git', 'dist', 'build', 'out', '.vscode'].includes(entry.name)) {
+                                    return [3 /*break*/, 6];
+                                }
                                 fullPath = path.join(dirPath, entry.name);
                                 if (!entry.isDirectory()) return [3 /*break*/, 4];
                                 return [4 /*yield*/, searchDir(fullPath)];
@@ -478,6 +484,126 @@ electron_1.ipcMain.handle('read-file-as-array-buffer', function (_event, filePat
                 console.error('Error reading file as ArrayBuffer:', error_13);
                 throw error_13;
             case 3: return [2 /*return*/];
+        }
+    });
+}); });
+// Execute code locally
+electron_1.ipcMain.handle('execute-code', function (_event, language, code) { return __awaiter(void 0, void 0, void 0, function () {
+    var os, exec, util, execAsync_1, tmpDir, lang, runCmd, output, sessionId, tmpFile, tmpFile, tmpFile, outFile, compileOutput, exeExists, tmpFile, outFile, compileOutput, exeExists, error_14;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 28, , 29]);
+                os = require('os');
+                exec = require('child_process').exec;
+                util = require('util');
+                execAsync_1 = util.promisify(exec);
+                tmpDir = os.tmpdir();
+                lang = language.toLowerCase();
+                runCmd = function (cmd) { return __awaiter(void 0, void 0, void 0, function () {
+                    var _a, stdout, stderr, e_1;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                _b.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, execAsync_1(cmd)];
+                            case 1:
+                                _a = _b.sent(), stdout = _a.stdout, stderr = _a.stderr;
+                                return [2 /*return*/, stdout || stderr || ''];
+                            case 2:
+                                e_1 = _b.sent();
+                                return [2 /*return*/, e_1.stdout || e_1.stderr || e_1.message];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); };
+                output = '';
+                sessionId = Date.now() + '_' + Math.floor(Math.random() * 1000);
+                if (!(lang === 'python' || lang === 'py')) return [3 /*break*/, 4];
+                tmpFile = path.join(tmpDir, "temp_".concat(sessionId, ".py"));
+                return [4 /*yield*/, fs.writeFile(tmpFile, code)];
+            case 1:
+                _a.sent();
+                return [4 /*yield*/, runCmd("python \"".concat(tmpFile, "\""))];
+            case 2:
+                output = _a.sent();
+                return [4 /*yield*/, fs.unlink(tmpFile).catch(function () { })];
+            case 3:
+                _a.sent();
+                return [3 /*break*/, 27];
+            case 4:
+                if (!(lang === 'javascript' || lang === 'js' || lang === 'node')) return [3 /*break*/, 8];
+                tmpFile = path.join(tmpDir, "temp_".concat(sessionId, ".js"));
+                return [4 /*yield*/, fs.writeFile(tmpFile, code)];
+            case 5:
+                _a.sent();
+                return [4 /*yield*/, runCmd("node \"".concat(tmpFile, "\""))];
+            case 6:
+                output = _a.sent();
+                return [4 /*yield*/, fs.unlink(tmpFile).catch(function () { })];
+            case 7:
+                _a.sent();
+                return [3 /*break*/, 27];
+            case 8:
+                if (!(lang === 'cpp' || lang === 'c++')) return [3 /*break*/, 17];
+                tmpFile = path.join(tmpDir, "temp_".concat(sessionId, ".cpp"));
+                outFile = path.join(tmpDir, process.platform === 'win32' ? "temp_".concat(sessionId, ".exe") : "temp_".concat(sessionId, ".out"));
+                return [4 /*yield*/, fs.writeFile(tmpFile, code)];
+            case 9:
+                _a.sent();
+                return [4 /*yield*/, runCmd("g++ \"".concat(tmpFile, "\" -o \"").concat(outFile, "\""))];
+            case 10:
+                compileOutput = _a.sent();
+                return [4 /*yield*/, fs.access(outFile).then(function () { return true; }).catch(function () { return false; })];
+            case 11:
+                exeExists = _a.sent();
+                if (!!exeExists) return [3 /*break*/, 12];
+                output = compileOutput;
+                return [3 /*break*/, 15];
+            case 12: return [4 /*yield*/, runCmd("\"".concat(outFile, "\""))];
+            case 13:
+                output = _a.sent();
+                return [4 /*yield*/, fs.unlink(outFile).catch(function () { })];
+            case 14:
+                _a.sent();
+                _a.label = 15;
+            case 15: return [4 /*yield*/, fs.unlink(tmpFile).catch(function () { })];
+            case 16:
+                _a.sent();
+                return [3 /*break*/, 27];
+            case 17:
+                if (!(lang === 'c')) return [3 /*break*/, 26];
+                tmpFile = path.join(tmpDir, "temp_".concat(sessionId, ".c"));
+                outFile = path.join(tmpDir, process.platform === 'win32' ? "temp_".concat(sessionId, ".exe") : "temp_".concat(sessionId, ".out"));
+                return [4 /*yield*/, fs.writeFile(tmpFile, code)];
+            case 18:
+                _a.sent();
+                return [4 /*yield*/, runCmd("gcc \"".concat(tmpFile, "\" -o \"").concat(outFile, "\""))];
+            case 19:
+                compileOutput = _a.sent();
+                return [4 /*yield*/, fs.access(outFile).then(function () { return true; }).catch(function () { return false; })];
+            case 20:
+                exeExists = _a.sent();
+                if (!!exeExists) return [3 /*break*/, 21];
+                output = compileOutput;
+                return [3 /*break*/, 24];
+            case 21: return [4 /*yield*/, runCmd("\"".concat(outFile, "\""))];
+            case 22:
+                output = _a.sent();
+                return [4 /*yield*/, fs.unlink(outFile).catch(function () { })];
+            case 23:
+                _a.sent();
+                _a.label = 24;
+            case 24: return [4 /*yield*/, fs.unlink(tmpFile).catch(function () { })];
+            case 25:
+                _a.sent();
+                return [3 /*break*/, 27];
+            case 26: return [2 /*return*/, { success: false, output: "Language \"".concat(language, "\" is not supported for local execution. Supported: Python, JS, C, C++") }];
+            case 27: return [2 /*return*/, { success: true, output: output }];
+            case 28:
+                error_14 = _a.sent();
+                return [2 /*return*/, { success: false, output: error_14.message }];
+            case 29: return [2 /*return*/];
         }
     });
 }); });

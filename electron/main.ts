@@ -85,7 +85,8 @@ ipcMain.handle('read-dir', async (_event, dirPath) => {
 ipcMain.handle('read-file', async (_event, filePath) => {
     try {
         return await fs.readFile(filePath, 'utf-8');
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'ENOENT') return null;
         throw error;
     }
 });
@@ -265,5 +266,76 @@ ipcMain.handle('read-file-as-array-buffer', async (_event, filePath: string) => 
     } catch (error) {
         console.error('Error reading file as ArrayBuffer:', error);
         throw error;
+    }
+});
+
+// Execute code locally
+ipcMain.handle('execute-code', async (_event, language: string, code: string) => {
+    try {
+        const os = require('os');
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execAsync = util.promisify(exec);
+        
+        const tmpDir = os.tmpdir();
+        const lang = language.toLowerCase();
+        
+        const runCmd = async (cmd: string) => {
+            try {
+                const { stdout, stderr } = await execAsync(cmd);
+                return stdout || stderr || '';
+            } catch (e: any) {
+                return e.stdout || e.stderr || e.message;
+            }
+        };
+        
+        let output = '';
+        const sessionId = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+        if (lang === 'python' || lang === 'py') {
+            const tmpFile = path.join(tmpDir, `temp_${sessionId}.py`);
+            await fs.writeFile(tmpFile, code);
+            output = await runCmd(`python "${tmpFile}"`);
+            await fs.unlink(tmpFile).catch(()=>{});
+        } else if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+            const tmpFile = path.join(tmpDir, `temp_${sessionId}.js`);
+            await fs.writeFile(tmpFile, code);
+            output = await runCmd(`node "${tmpFile}"`);
+            await fs.unlink(tmpFile).catch(()=>{});
+        } else if (lang === 'cpp' || lang === 'c++') {
+            const tmpFile = path.join(tmpDir, `temp_${sessionId}.cpp`);
+            const outFile = path.join(tmpDir, process.platform === 'win32' ? `temp_${sessionId}.exe` : `temp_${sessionId}.out`);
+            await fs.writeFile(tmpFile, code);
+            const compileOutput = await runCmd(`g++ "${tmpFile}" -o "${outFile}"`);
+            
+            const exeExists = await fs.access(outFile).then(() => true).catch(() => false);
+            if (!exeExists) {
+                output = compileOutput;
+            } else {
+                output = await runCmd(`"${outFile}"`);
+                await fs.unlink(outFile).catch(()=>{});
+            }
+            await fs.unlink(tmpFile).catch(()=>{});
+        } else if (lang === 'c') {
+            const tmpFile = path.join(tmpDir, `temp_${sessionId}.c`);
+            const outFile = path.join(tmpDir, process.platform === 'win32' ? `temp_${sessionId}.exe` : `temp_${sessionId}.out`);
+            await fs.writeFile(tmpFile, code);
+            const compileOutput = await runCmd(`gcc "${tmpFile}" -o "${outFile}"`);
+            
+            const exeExists = await fs.access(outFile).then(() => true).catch(() => false);
+            if (!exeExists) {
+                output = compileOutput;
+            } else {
+                output = await runCmd(`"${outFile}"`);
+                await fs.unlink(outFile).catch(()=>{});
+            }
+            await fs.unlink(tmpFile).catch(()=>{});
+        } else {
+            return { success: false, output: `Language "${language}" is not supported for local execution. Supported: Python, JS, C, C++` };
+        }
+        
+        return { success: true, output: output };
+    } catch (error: any) {
+        return { success: false, output: error.message };
     }
 });

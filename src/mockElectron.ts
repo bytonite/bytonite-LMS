@@ -22,6 +22,7 @@ if (!window.electronAPI) {
   window.electronAPI = {
     getAppPath: async () => FAKE_ROOT,
     getDocumentsPath: async () => FAKE_ROOT,
+    executeCode: async (language: string, code: string) => ({ success: true, output: `Mock execution for ${language}\n\n${code}` }),
     readDir: async (path: string) => {
       const currentFs = getStorage();
       const results = [];

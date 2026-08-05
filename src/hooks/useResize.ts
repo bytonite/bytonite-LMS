@@ -1,17 +1,46 @@
 export const setupResize = (container: HTMLElement) => {
     // Make resizable elements
     const makeResizable = (element: HTMLElement) => {
-        // Skip if already has resize handles or is inside code block content
-        if (element.querySelector('.resize-handle')) return;
-        if (element.closest('.code-block-content')) return;
-        if (element.classList.contains('resize-handle')) return;
-        
         const isGridCell = element.classList.contains('grid-cell');
+        const hasCodeBlock = element.classList.contains('code-block-wrapper') || element.querySelector('.code-block-wrapper');
+
+        // Skip if already has resize handles or is inside code block content
+        if (element.querySelector('.resize-handle')) {
+            // If it already has handles, but now contains a code block, we MUST remove the conflicting ones
+            if (hasCodeBlock) {
+                element.querySelectorAll('.handle-ne, .handle-e, .handle-n, .handle-nw, .handle-w, .handle-sw').forEach(h => h.remove());
+            }
+            return;
+        }
+        if (element.closest('.code-block-content') || element.closest('.code-block-header')) return;
+        if (element.classList.contains('resize-handle')) return;
         
         // Create resize handles 
         // Grid cells only get right/bottom/bottom-right to prevent margin-left collapse
-        const handles = isGridCell ? ['e', 's', 'se'] : ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'];
+        let handles = isGridCell ? ['e', 's', 'se'] : ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'];
         
+        if (hasCodeBlock) {
+            // Remove top/right handles to prevent overlap with CodeBlockHeader buttons
+            // Remove left handles to prevent overlap with code text
+            handles = handles.filter(h => !['ne', 'e', 'n', 'nw', 'w', 'sw'].includes(h));
+        }
+        
+        // Hover logic for hiding parent handles (fallback for browsers without :has())
+        element.addEventListener('mouseenter', () => {
+            let parent = element.parentElement;
+            while (parent) {
+                if (parent.classList?.contains('resizable')) parent.classList.add('child-hovered');
+                parent = parent.parentElement;
+            }
+        });
+        element.addEventListener('mouseleave', () => {
+            let parent = element.parentElement;
+            while (parent) {
+                if (parent.classList?.contains('resizable')) parent.classList.remove('child-hovered');
+                parent = parent.parentElement;
+            }
+        });
+
         handles.forEach(pos => {
             const handle = document.createElement('div');
             handle.className = `resize-handle handle-${pos}`;

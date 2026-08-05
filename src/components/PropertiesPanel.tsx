@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
     AlignLeft, AlignCenter, AlignRight, Type, Layout, Maximize, 
-    PaintBucket, BoxSelect, Bold, Italic, Underline, Trash2, Ban
+    PaintBucket, Bold, Italic, Underline, Trash2, Ban, GitPullRequest
 } from 'lucide-react';
 import './PropertiesPanel.css';
 
@@ -16,7 +16,9 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
     const [styles, setStyles] = useState<CSSStyleDeclaration | null>(null);
     const [editTarget, setEditTarget] = useState<'container' | 'content'>('container');
 
-    const isCallout = block?.classList.contains('callout');
+    const isCallout = block?.classList.contains('callout') || !!block?.querySelector('.callout');
+    const mermaidWrapper = block?.classList.contains('mermaid-diagram-wrapper') ? block : block?.querySelector('.mermaid-diagram-wrapper');
+    const isMermaid = !!mermaidWrapper;
 
     // Reset target when block changes
     useEffect(() => {
@@ -387,6 +389,34 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
 
             {/* ACTIONS */}
             <div className="panel-section">
+                {isMermaid && (
+                    <button className="primary-btn full-width" onClick={() => {
+                        if (!mermaidWrapper) return;
+                        const code = mermaidWrapper.getAttribute('data-mermaid-code') || '';
+                        if ((window as any).__openMermaidEditor) {
+                            (window as any).__openMermaidEditor(code, (newCode: string) => {
+                                mermaidWrapper.setAttribute('data-mermaid-code', newCode);
+                                onUpdate();
+                            });
+                        }
+                    }} style={{
+                        width: '100%',
+                        padding: '8px',
+                        backgroundColor: 'var(--interactive-accent)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        marginBottom: '10px'
+                    }}>
+                        <GitPullRequest size={14} /> Edit Diagram
+                    </button>
+                )}
+                
                 <button className="danger-btn full-width" onClick={handleDelete} style={{
                     width: '100%',
                     padding: '8px',

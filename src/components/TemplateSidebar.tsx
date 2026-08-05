@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Columns, Code, FileText, GripVertical, Calendar, Zap, CheckSquare, Image as ImageIcon } from 'lucide-react';
+import { Layout, Columns, Code, FileText, GripVertical, Calendar, Zap, CheckSquare, Image as ImageIcon, GitPullRequest } from 'lucide-react';
 import { templates, Template } from '../data/templates';
 
 interface TemplateSidebarProps {
@@ -16,7 +16,8 @@ const iconMap: Record<string, any> = {
     'Calendar': Calendar,
     'Zap': Zap,
     'CheckSquare': CheckSquare,
-    'Image': ImageIcon
+    'Image': ImageIcon,
+    'GitPullRequest': GitPullRequest
 };
 
 export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarProps) {

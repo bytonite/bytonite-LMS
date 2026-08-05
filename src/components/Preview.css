@@ -453,6 +453,10 @@
     outline-offset: -2px;
 }
 
+.design-mode-container .mermaid-edit-btn {
+    display: none !important;
+}
+
 /* Ghost Preview Element */
 .drag-ghost {
     opacity: 0.6;
@@ -590,7 +594,8 @@ video.resizable,
 }
 
 /* If a nested resizable is being hovered, don't show the parent's handles */
-.design-mode-container .resizable:not(.resizing):hover:has(.resizable:hover) > .resize-handle {
+.design-mode-container .resizable:not(.resizing):hover:has(.resizable:hover) > .resize-handle,
+.design-mode-container .resizable:not(.resizing).child-hovered > .resize-handle {
     opacity: 0 !important;
     pointer-events: none !important;
 }
@@ -610,6 +615,26 @@ video.resizable,
     top: -5px;
     right: -5px;
     cursor: nesw-resize;
+}
+
+/* Hide top-right, right, and top handles for code blocks so they don't overlap the play/copy buttons */
+/* Also hide top-left, left, and bottom-left handles so they don't overlap code content */
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-ne,
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-e,
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-n,
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-nw,
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-w,
+.design-mode-container .resizable.code-block-wrapper > .resize-handle.handle-sw {
+    display: none !important;
+}
+
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-ne,
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-e,
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-n,
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-nw,
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-w,
+.design-mode-container .resizable:has(.code-block-wrapper) > .resize-handle.handle-sw {
+    display: none !important;
 }
 
 .resize-handle.handle-sw {
@@ -894,4 +919,46 @@ video.resizable,
     width: 1px;
     top: 0;
     bottom: 0;
+}
+
+/* ── Mermaid diagram zoom styles ────────────────────────────────────────── */
+
+/* Wrapper uses overflow:hidden — the SVG's actual width/height (set by
+   applyResponsiveTransform) expand the block in document flow correctly,
+   pushing sibling elements down without overlapping them. */
+.mermaid-diagram-wrapper {
+    overflow: hidden;
+}
+
+/* The SVG container itself can overflow (e.g. for translation offsets) */
+.mermaid-svg-container {
+    overflow: visible;
+}
+
+.mermaid-svg-container svg {
+    overflow: visible;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Reading mode: completely block any interaction with diagram */
+.markdown-preview:not(.design-mode) .mermaid-diagram-wrapper {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Design Mode: allow hover for zoom toolbar, but block direct SVG interaction */
+.design-mode .mermaid-diagram-wrapper {
+    pointer-events: auto;
+    cursor: default;
+}
+
+.design-mode .mermaid-svg-container {
+    pointer-events: none;
+}
+
+/* Zoom toolbar button hover effect */
+.mermaid-zoom-toolbar button:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
 }

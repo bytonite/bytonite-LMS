@@ -69,13 +69,16 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
 
     // Recursively make elements draggable
     const makeDraggable = (root: HTMLElement) => {
-        const significantSelector = 'p, h1, h2, h3, h4, h5, h6, ul, ol, li, img, button, table, blockquote, .callout, pre, .code-block-wrapper, .flex-row, .flex-col, .dashboard-grid, .grid-cell';
+        const significantSelector = 'p, h1, h2, h3, h4, h5, h6, ul, ol, li, img, button, table, blockquote, .callout, pre, .code-block-wrapper, .mermaid-diagram-wrapper, .flex-row, .flex-col, .dashboard-grid, .grid-cell';
         
         const processNode = (child: any) => {
             if (!child || !child.tagName) return;
             if (child.tagName === 'SCRIPT' || child.tagName === 'STYLE') return;
-            if (child.closest && child.closest('.code-block-content')) return; 
-            if (child.parentElement && child.parentElement.closest('.callout') && !child.classList.contains('callout')) return; 
+            // Skip elements inside code-block-wrapper, but allow the wrapper itself
+            if (child.closest && child.closest('.code-block-wrapper') && !child.classList.contains('code-block-wrapper')) return;
+            // Skip elements inside mermaid wrapper, but allow the wrapper itself
+            if (child.closest && child.closest('.mermaid-diagram-wrapper') && !child.classList.contains('mermaid-diagram-wrapper')) return;
+            if (child.parentElement && child.parentElement.closest('.callout') && !child.classList.contains('callout')) return;
 
             if (!child.classList.contains('draggable-block')) {
                 child.classList.add('draggable-block');
@@ -84,9 +87,9 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                     if (container.contentEditable === 'true' && !draggedItem) {
                         e.stopPropagation();
                         
-                        // Remove old hover handle if exists
-                        const oldHandle = container.querySelector('.hover-drag-handle');
-                        if (oldHandle) oldHandle.remove();
+                        // Remove old hover handles if exist
+                        const oldHandles = container.querySelectorAll('.hover-drag-handle');
+                        oldHandles.forEach(h => h.remove());
 
                         // Add new handle
                         const handle = document.createElement('div');
@@ -94,10 +97,12 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                         handle.contentEditable = 'false';
                         handle.draggable = true;
                         const isCodeBlock = child.classList.contains('code-block-wrapper');
+                        const isMermaid   = child.classList.contains('mermaid-diagram-wrapper');
                         Object.assign(handle.style, {
                             position: 'absolute',
-                            right: isCodeBlock ? '120px' : '12px',
-                            top: isCodeBlock ? '-12px' : '12px',
+                            right: isCodeBlock ? '220px' : isMermaid ? '' : '12px',
+                            left:  isMermaid ? '8px' : '',
+                            top:   isCodeBlock ? '-24px' : '8px',
                             width: '32px',
                             height: '24px',
                             display: 'flex',
@@ -182,7 +187,15 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
         
         if (!draggedItem) return;
         
-        // Smart Selection
+        // Smart Selection: bubble up to meaningful wrappers
+        // For mermaid diagrams: bubble up to <pre> parent (Turndown wraps them in <pre>)
+        if (draggedItem.classList.contains('mermaid-diagram-wrapper')) {
+            const preParen = draggedItem.parentElement;
+            if (preParen && preParen.tagName === 'PRE' && container.contains(preParen)) {
+                draggedItem = preParen as HTMLElement;
+            }
+        }
+        
         const wrapper = draggedItem.closest('.callout, .code-block-wrapper, .flex-row');
         if (wrapper && container.contains(wrapper) && wrapper !== container) {
              draggedItem = wrapper as HTMLElement;

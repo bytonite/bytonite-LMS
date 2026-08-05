@@ -16,6 +16,7 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     copyFile: function (src, dest) { return electron_1.ipcRenderer.invoke('copy-file', src, dest); },
     saveBlob: function (dest, buffer) { return electron_1.ipcRenderer.invoke('save-blob', dest, buffer); },
     openExternal: function (path) { return electron_1.ipcRenderer.invoke('open-external', path); },
-    renamePath: function (oldPath, newPath) { return electron_1.ipcRenderer.invoke('rename-path', oldPath, newPath); }
+    renamePath: function (oldPath, newPath) { return electron_1.ipcRenderer.invoke('rename-path', oldPath, newPath); },
+    executeCode: function (language, code) { return electron_1.ipcRenderer.invoke('execute-code', language, code); }
 });
 //# sourceMappingURL=preload.js.map

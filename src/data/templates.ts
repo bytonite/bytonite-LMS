@@ -177,5 +177,12 @@ export const templates: Template[] = [
         description: 'Блок кода (Автоопределение)',
         icon: 'Code',
         content: `<div class="code-block-wrapper draggable-block" data-language="auto"><div class="code-block-content"><code>// Ваш код здесь</code></div></div>`
+    },
+    {
+        id: 'mermaid-diagram',
+        name: 'Диаграмма (Mermaid)',
+        description: 'Блок для создания диаграмм (Mermaid)',
+        icon: 'GitPullRequest',
+        content: `<div class="mermaid-diagram-wrapper draggable-block" data-mermaid-code="graph TD;&#10;  A-->B;" contenteditable="false"><div class="mermaid-svg-container"></div></div>`
     }
 ];

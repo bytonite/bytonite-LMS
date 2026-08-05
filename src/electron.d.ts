@@ -18,6 +18,7 @@ declare global {
       saveBlob: (dest: string, buffer: number[]) => Promise<string>;
       openExternal: (path: string) => Promise<void>;
       renamePath: (oldPath: string, newPath: string) => Promise<string>;
+      executeCode: (language: string, code: string) => Promise<{ success: boolean; output: string }>;
     }
   }
 }
