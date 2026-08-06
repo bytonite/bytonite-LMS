@@ -324,7 +324,7 @@ export const markdownToHtmlHelper = (md: string): string => {
             : `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#89b4fa;opacity:0.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                     <p style="font-size:13px;color:var(--text-muted);margin:0;">Диаграмма не создана</p>
-                    <button class="diagram-create-btn" contenteditable="false" style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:linear-gradient(135deg,#89b4fa,#cba6f7);color:#1e1e2e;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+                    <button class="diagram-create-btn" contenteditable="false" style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:linear-gradient(135deg,#4ade80,#22c55e);color:#052e16;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Создать диаграмму
                     </button>
@@ -335,7 +335,7 @@ export const markdownToHtmlHelper = (md: string): string => {
                 <div class="callout-title">
                     <div class="callout-icon">${diagramSvgIcon}</div>
                     <div class="callout-title-inner">${title || 'Диаграмма'}</div>
-                    <button class="diagram-edit-btn" contenteditable="false" style="${savedJson ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:4px 10px;margin-left:auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
+                    <button class="diagram-edit-btn" contenteditable="false" style="${savedJson ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:5px 12px;margin-left:auto;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;font-size:11px;font-weight:600;color:#052e16;cursor:pointer;">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Редактировать
                     </button>
