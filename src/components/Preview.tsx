@@ -132,7 +132,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                     Диаграмма сохранена &mdash; дважды кликните для редактирования
                    </div>`;
 
-            content.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+            content.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;border-radius:6px;padding:8px;">
                 ${renderedContent}
             </div>`;
         }
@@ -662,7 +662,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                                                     Диаграмма сохранена &mdash; нажмите <b>Редактировать</b> для изменения
                                                    </div>`;
-                                            contentEl.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+                                            contentEl.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;border-radius:6px;padding:8px;">
                                                 ${renderedContent}
                                             </div>`;
                                         } else {

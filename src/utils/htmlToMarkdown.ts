@@ -326,7 +326,7 @@ export const markdownToHtmlHelper = (md: string): string => {
                </div>`;
 
         const contentHtml = savedJson
-            ? `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+            ? `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;border-radius:6px;padding:8px;">
                     ${renderedContent}
                </div>`
             : `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">
