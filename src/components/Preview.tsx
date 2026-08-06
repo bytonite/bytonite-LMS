@@ -555,30 +555,106 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                             // Only sync DOM if entering design mode OR content was changed externally (e.g. from code editor)
                             // If it matches lastSavedContentRef, it means the change originated from the visual editor itself.
                             if (content !== lastSavedContentRef.current || editableRef.current.innerHTML === '') {
-                                // Build HTML from markdown directly (not from previewRef)
-                                // so that data-diagram attributes and Create/Edit buttons are preserved.
-                                const blocks = content.split(/\n(?=\n)/).filter(b => b.trim());
-                                const htmlParts: string[] = [];
-                                let i = 0;
-                                while (i < blocks.length) {
-                                    const block = blocks[i].trim();
-                                    // Multi-line callout: collect continuation lines
-                                    if (block.startsWith('> ')) {
-                                        let calloutLines = block;
-                                        while (i + 1 < blocks.length && blocks[i + 1].trim().startsWith('> ')) {
-                                            i++;
-                                            calloutLines += '\n' + blocks[i].trim();
+                                // Copy previewRef HTML (preserves Mermaid SVGs, tables, etc.)
+                                editableRef.current.innerHTML = previewRef.current.innerHTML;
+
+                                // Post-process: restore data-diagram + buttons for diagram callouts.
+                                // previewRef renders DiagramCallout as React component without data-diagram,
+                                // so we parse markdown to find saved JSON and inject it back into DOM.
+                                const diagramEls = Array.from(editableRef.current.querySelectorAll('.callout-diagram')) as HTMLElement[];
+                                if (diagramEls.length > 0) {
+                                    // Parse markdown line by line to extract diagram JSON blocks
+
+                                    const lines = content.split('\n');
+                                    const diagrams: Array<{ json: string; width: string; height: string }> = [];
+                                    let inDiagram = false;
+                                    let inExcalidraw = false;
+                                    let jsonLines: string[] = [];
+                                    let w = '0', h = '0';
+
+                                    for (const line of lines) {
+                                        const stripped = line.replace(/^>\s?/, '');
+                                        if (/^\[!diagram\]/i.test(stripped)) {
+                                            inDiagram = true; inExcalidraw = false; jsonLines = []; w = '0'; h = '0';
+                                        } else if (inDiagram) {
+                                            if (!line.startsWith('>')) {
+                                                // End of callout block
+                                                if (jsonLines.length > 0) diagrams.push({ json: jsonLines.join('\n'), width: w, height: h });
+                                                else diagrams.push({ json: '', width: '0', height: '0' });
+                                                inDiagram = false; inExcalidraw = false;
+                                            } else if (stripped.startsWith('```excalidraw')) {
+                                                inExcalidraw = true;
+                                            } else if (inExcalidraw && stripped.startsWith('```')) {
+                                                inExcalidraw = false;
+                                            } else if (inExcalidraw) {
+                                                jsonLines.push(stripped);
+                                            } else {
+                                                const dm = stripped.match(/<!--\s*w:(\d+)\s*h:(\d+)\s*-->/);
+                                                if (dm) { w = dm[1]; h = dm[2]; }
+                                            }
                                         }
-                                        htmlParts.push(markdownToHtmlHelper(calloutLines));
-                                    } else {
-                                        htmlParts.push(markdownToHtmlHelper(block));
                                     }
-                                    i++;
+                                    if (inDiagram) {
+                                        if (jsonLines.length > 0) diagrams.push({ json: jsonLines.join('\n'), width: w, height: h });
+                                        else diagrams.push({ json: '', width: '0', height: '0' });
+                                    }
+
+                                    const diagramSvgIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
+
+                                    diagramEls.forEach((el, idx) => {
+                                        const d = diagrams[idx];
+                                        if (!d) return;
+
+                                        const hasJson = d.json.trim().startsWith('{');
+                                        el.setAttribute('data-diagram', hasJson ? encodeURIComponent(d.json) : '');
+                                        el.setAttribute('data-diagram-width', d.width);
+                                        el.setAttribute('data-diagram-height', d.height);
+
+                                        // Rebuild title area with edit button
+                                        let titleEl = el.querySelector('.callout-title') as HTMLElement | null;
+                                        if (!titleEl) {
+                                            titleEl = document.createElement('div');
+                                            titleEl.className = 'callout-title';
+                                            el.prepend(titleEl);
+                                        }
+                                        const titleText = titleEl.querySelector('.callout-title-inner')?.textContent || 'Диаграмма';
+                                        titleEl.innerHTML = `
+                                            <div class="callout-icon">${diagramSvgIcon}</div>
+                                            <div class="callout-title-inner">${titleText}</div>
+                                            <button class="diagram-edit-btn" contenteditable="false" style="${hasJson ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:4px 10px;margin-left:auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                Редактировать
+                                            </button>`;
+
+                                        // Rebuild content area
+                                        let contentEl = el.querySelector('.callout-content') as HTMLElement | null;
+                                        if (!contentEl) {
+                                            contentEl = document.createElement('div');
+                                            contentEl.className = 'callout-content';
+                                            el.appendChild(contentEl);
+                                        }
+                                        if (hasJson) {
+                                            contentEl.innerHTML = `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                                Диаграмма сохранена &mdash; нажмите <b>Редактировать</b> для изменения
+                                            </div>`;
+                                        } else {
+                                            contentEl.innerHTML = `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#89b4fa;opacity:0.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                                <p style="font-size:13px;color:var(--text-muted);margin:0;">Диаграмма не создана</p>
+                                                <button class="diagram-create-btn" contenteditable="false" style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:linear-gradient(135deg,#89b4fa,#cba6f7);color:#1e1e2e;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                    Создать диаграмму
+                                                </button>
+                                            </div>`;
+                                        }
+                                    });
                                 }
-                                editableRef.current.innerHTML = htmlParts.join('\n');
+
                                 // Update last saved content so we don't infinitely re-sync
                                 lastSavedContentRef.current = content;
                             }
+
 
                             
                             interactionsCleanupRef.current = setupInteractions(editableRef.current);
