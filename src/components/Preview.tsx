@@ -65,6 +65,27 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
         if (container) container.style.transition = 'transform 0.12s ease-out';
     }, []);
 
+    // ── Diagram-save event: fired by DiagramCallout after user saves ──────────
+    // Updates the DOM element's data-diagram attributes and triggers autosave.
+    useEffect(() => {
+        const container = designMode ? editableRef.current : previewRef.current;
+        if (!container) return;
+
+        const onDiagramSave = () => {
+            // Give React one tick to update the DOM attribute before serialising
+            setTimeout(() => {
+                if (onAutoSave && container) {
+                    const cleaned  = cleanHTML(container);
+                    const markdown = htmlToMarkdown(cleaned);
+                    onAutoSave(markdown);
+                }
+            }, 50);
+        };
+
+        container.addEventListener('diagram-save', onDiagramSave);
+        return () => container.removeEventListener('diagram-save', onDiagramSave);
+    }, [designMode, onAutoSave]);
+
     // ── Design Mode: hover events for zoom toolbar + Ctrl+Wheel zoom ──────────
     useEffect(() => {
         if (!designMode) {

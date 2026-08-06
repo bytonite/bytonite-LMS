@@ -1,0 +1,237 @@
+/* ── DiagramCallout Styles ─────────────────────────────────────────────── */
+
+/* ─── Overlay / Modal ─────────────────────────────────────────────────── */
+.diagram-editor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.diagram-editor-modal {
+    display: flex;
+    flex-direction: column;
+    width: 95vw;
+    height: 92vh;
+    background: #1e1e2e;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    overflow: hidden;
+    animation: modalSlideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideIn {
+    from { transform: translateY(24px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+
+/* ─── Modal Header ────────────────────────────────────────────────────── */
+.diagram-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #16161e;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.diagram-editor-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #cdd6f4;
+}
+
+.diagram-editor-title svg {
+    color: #89b4fa;
+}
+
+.diagram-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.diagram-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+.diagram-btn-save {
+    background: #89b4fa;
+    color: #1e1e2e;
+}
+
+.diagram-btn-save:hover {
+    background: #b4d0ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(137,180,250,0.35);
+}
+
+.diagram-btn-cancel {
+    background: rgba(255,255,255,0.07);
+    color: #cdd6f4;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.diagram-btn-cancel:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.diagram-btn-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: rgba(255,255,255,0.06);
+    color: #6c7086;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.diagram-btn-close:hover {
+    background: rgba(243,139,168,0.2);
+    color: #f38ba8;
+}
+
+/* ─── Modal Body (Excalidraw canvas area) ─────────────────────────────── */
+.diagram-editor-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    background: #f5f5f0;
+}
+
+/* Excalidraw dark theme overrides to blend with our UI */
+.diagram-editor-body .excalidraw {
+    --color-surface-lowest: #1e1e2e;
+    --color-surface-low: #181825;
+    --color-surface-mid: #1e1e2e;
+    --color-surface-high: #313244;
+    --color-surface-highest: #45475a;
+}
+
+/* ─── Callout "Create" placeholder ──────────────────────────────────────── */
+.diagram-callout-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px 24px;
+    min-height: 160px;
+    text-align: center;
+}
+
+.diagram-callout-empty-icon {
+    color: #89b4fa;
+    opacity: 0.6;
+}
+
+.diagram-callout-empty p {
+    font-size: 14px;
+    color: #6c7086;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.diagram-create-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #89b4fa, #cba6f7);
+    color: #1e1e2e;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(137,180,250,0.3);
+}
+
+.diagram-create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(137,180,250,0.45);
+}
+
+.diagram-create-btn:active {
+    transform: translateY(0);
+}
+
+/* ─── Diagram Viewer (responsive display inside callout) ─────────────── */
+.diagram-viewer-outer {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.diagram-viewer-inner {
+    transform-origin: top left;
+    /* transform is set dynamically via JS */
+}
+
+.diagram-viewer-toolbar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.diagram-viewer-outer:hover .diagram-viewer-toolbar {
+    opacity: 1;
+}
+
+.diagram-viewer-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(30,30,46,0.85);
+    backdrop-filter: blur(8px);
+    color: #cdd6f4;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.diagram-viewer-btn:hover {
+    background: rgba(137,180,250,0.2);
+    border-color: #89b4fa;
+    color: #89b4fa;
+}

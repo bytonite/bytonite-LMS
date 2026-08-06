@@ -184,5 +184,12 @@ export const templates: Template[] = [
         description: 'Блок для создания диаграмм (Mermaid)',
         icon: 'GitPullRequest',
         content: `<div class="mermaid-diagram-wrapper draggable-block" data-mermaid-code="graph TD;&#10;  A-->B;" contenteditable="false"><div class="mermaid-svg-container"></div></div>`
+    },
+    {
+        id: 'diagram-callout',
+        name: 'Диаграмма (Конструктор)',
+        description: 'Полноэкранный редактор диаграмм (Draw.io / Excalidraw)',
+        icon: 'Layout',
+        content: `> [!diagram] Диаграмма`
     }
 ];

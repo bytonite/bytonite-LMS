@@ -1,6 +1,7 @@
 import React, { useState, Children, isValidElement } from 'react';
 import { ChevronDown, Copy, Check } from 'lucide-react';
 import { CALLOUT_COLOR_MAP, hexToRgb } from '../../utils/markdownUtils';
+import { DiagramCallout } from '../DiagramCallout/DiagramCallout';
 
 export const Callout = ({ children }: any) => {
     const arrayChildren = Children.toArray(children);
@@ -114,6 +115,70 @@ export const Callout = ({ children }: any) => {
             <blockquote style={{ borderLeft: 'none', paddingLeft: '16px', marginLeft: '0', color: 'var(--text-muted)' }}>
                 {children}
             </blockquote>
+        );
+    }
+
+    // ── Special case: Diagram callout ──────────────────────────────────────
+    if (type === 'diagram') {
+        // Extract saved JSON — stored as a hidden code/pre child in the blockquote.
+        // When there is data, remainingChildren contains a <code>/<pre> node
+        // whose text content is the serialised DiagramData JSON.
+        let savedJson: string | null = null;
+        remainingChildren.forEach(child => {
+            if (isValidElement(child)) {
+                const text = getRecursiveText(child);
+                if (text.startsWith('{"elements"')) savedJson = text;
+            }
+        });
+
+        // isDesignMode: detect if we are inside a contenteditable area
+        const isDesignMode = !!document.querySelector('[contenteditable="true"]');
+
+        const calloutRef = React.createRef<HTMLDivElement>();
+
+        const handleSave = (json: string, width: number, height: number) => {
+            // Fire a custom event on the callout element so Preview.tsx /
+            // useAutoSave can intercept, update the DOM, and trigger save.
+            const el = calloutRef.current;
+            if (el) {
+                el.setAttribute('data-diagram', json);
+                el.setAttribute('data-diagram-width',  String(width));
+                el.setAttribute('data-diagram-height', String(height));
+                el.dispatchEvent(new CustomEvent('diagram-save', {
+                    bubbles: true,
+                    detail: { json, width, height }
+                }));
+            }
+        };
+
+        const color = CALLOUT_COLOR_MAP['note'];
+        const rgbColor = hexToRgb(color);
+
+        return (
+            <div
+                ref={calloutRef}
+                className="callout callout-diagram"
+                data-diagram={savedJson || undefined}
+                style={{ '--callout-color': rgbColor } as React.CSSProperties}
+            >
+                <div className="callout-title">
+                    <div className="callout-icon">
+                        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M3 9h18M9 21V9"/>
+                        </svg>
+                    </div>
+                    <div className="callout-title-inner">{title || 'Диаграмма'}</div>
+                </div>
+                <div className="callout-content">
+                    <DiagramCallout
+                        initialDataJson={savedJson}
+                        onSave={handleSave}
+                        isDesignMode={isDesignMode}
+                        title={title || 'Диаграмма'}
+                    />
+                </div>
+            </div>
         );
     }
 

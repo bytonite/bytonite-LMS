@@ -194,6 +194,31 @@ export const htmlToMarkdown = (html: string): string => {
         }
     });
 
+    // Custom rule for Diagram Callout (Excalidraw)
+    turndownService.addRule('diagramCallout', {
+        filter: (node) => {
+            return node.nodeName === 'DIV'
+                && node.classList.contains('callout')
+                && node.classList.contains('callout-diagram');
+        },
+        replacement: (_content, node) => {
+            const element   = node as HTMLElement;
+            const titleEl   = element.querySelector('.callout-title-inner');
+            const title     = titleEl?.textContent?.trim() || 'Диаграмма';
+            const dataJson  = element.getAttribute('data-diagram') || '';
+            const width     = element.getAttribute('data-diagram-width')  || '0';
+            const height    = element.getAttribute('data-diagram-height') || '0';
+
+            if (dataJson) {
+                // Store JSON in a fenced code block tagged "excalidraw"
+                return `\n> [!diagram] ${title}\n> \`\`\`excalidraw\n> ${dataJson}\n> \`\`\`\n> <!-- w:${width} h:${height} -->\n`;
+            }
+            // Empty diagram (no data yet)
+            return `\n> [!diagram] ${title}\n`;
+        }
+    });
+
+
 
     turndownService.addRule('image', {
         filter: 'img',
