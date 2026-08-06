@@ -175,12 +175,10 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(137,180,250,0.3);
 }
 
 .diagram-create-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(137,180,250,0.45);
 }
 
 .diagram-create-btn:active {
