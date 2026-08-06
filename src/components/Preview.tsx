@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { createPortal } from 'react-dom';
 import './Preview.css';
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
@@ -9,6 +10,8 @@ import { setupDragAndDrop } from '../hooks/useDragAndDrop';
 import { setupInteractions } from '../hooks/useInteractions';
 import { useMermaidRender, applyResponsiveTransform } from '../hooks/useMermaidRender';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { DiagramEditor } from './DiagramCallout/DiagramEditor';
+import type { DiagramData } from './DiagramCallout/DiagramEditor';
 
 import { getMarkdownComponents } from './markdown/MarkdownComponents';
 import TextToolbar from './TextToolbar';
@@ -35,15 +38,22 @@ interface PreviewProps {
     onSelectSourcePos?: (pos: string | null) => void;
     /** true — split screen with editor; false/undefined — reading mode */
     hasEditor?: boolean;
+    /** Called with the open-diagram callback so parent (App) can trigger it from PropertiesPanel */
+    onRegisterOpenDiagram?: (openFn: (block: HTMLElement) => void) => void;
 }
 
-export default function Preview({ content, filePath, allFiles, onFileSelect, designMode = false, onRegisterSave, onAutoSave, selectedBlocks, onSelectBlocks, rootPath: _rootPath, onRefresh, activeSourcePos: _activeSourcePos, onSelectSourcePos, hasEditor = false }: PreviewProps) {
+export default function Preview({ content, filePath, allFiles, onFileSelect, designMode = false, onRegisterSave, onAutoSave, selectedBlocks, onSelectBlocks, rootPath: _rootPath, onRefresh, activeSourcePos: _activeSourcePos, onSelectSourcePos, hasEditor = false, onRegisterOpenDiagram }: PreviewProps) {
 
     const editableRef = useRef<HTMLDivElement>(null);
     const previewRef = useRef<HTMLDivElement>(null);
     const dndCleanupRef = useRef<(() => void) | null>(null);
     const resizeCleanupRef = useRef<(() => void) | null>(null);
     const interactionsCleanupRef = useRef<(() => void) | null>(null);
+
+    // ── Diagram Editor (Design Mode event delegation) ─────────────────────────
+    const [diagramEditorOpen, setDiagramEditorOpen] = useState(false);
+    const diagramTargetEl = useRef<HTMLElement | null>(null);
+    const diagramInitialData = useRef<DiagramData | null>(null);
 
     // ── Mermaid zoom toolbar (Design Mode only) ───────────────────────────────
     interface MermaidZoomState {
@@ -66,26 +76,78 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
         if (container) container.style.transition = 'transform 0.12s ease-out';
     }, []);
 
-    // ── Diagram-save event: fired by DiagramCallout after user saves ──────────
-    // Updates the DOM element's data-diagram attributes and triggers autosave.
+    // ── Design Mode: Event delegation for diagram Create/Edit buttons ──────────
     useEffect(() => {
-        const container = designMode ? editableRef.current : previewRef.current;
+        if (!designMode) return;
+        const container = editableRef.current;
         if (!container) return;
 
-        const onDiagramSave = () => {
-            // Give React one tick to update the DOM attribute before serialising
-            setTimeout(() => {
-                if (onAutoSave && container) {
-                    const cleaned  = cleanHTML(container);
-                    const markdown = htmlToMarkdown(cleaned);
-                    onAutoSave(markdown);
-                }
-            }, 50);
+        const onClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const btn = target.closest('.diagram-create-btn, .diagram-edit-btn');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const calloutEl = btn.closest('.callout-diagram') as HTMLElement | null;
+            if (!calloutEl) return;
+
+            const encoded = calloutEl.getAttribute('data-diagram') || '';
+            let initialData: DiagramData | null = null;
+            if (encoded) { try { initialData = JSON.parse(decodeURIComponent(encoded)); } catch {} }
+
+            diagramTargetEl.current    = calloutEl;
+            diagramInitialData.current = initialData;
+            setDiagramEditorOpen(true);
         };
 
-        container.addEventListener('diagram-save', onDiagramSave);
-        return () => container.removeEventListener('diagram-save', onDiagramSave);
-    }, [designMode, onAutoSave]);
+        container.addEventListener('click', onClick);
+        return () => container.removeEventListener('click', onClick);
+    }, [designMode]);
+
+    // Diagram save: updates DOM and triggers autosave
+    const handleDiagramSave = useCallback((data: DiagramData) => {
+        const el = diagramTargetEl.current;
+        setDiagramEditorOpen(false);
+        if (!el) return;
+
+        const jsonStr = JSON.stringify(data);
+        el.setAttribute('data-diagram',        encodeURIComponent(jsonStr));
+        el.setAttribute('data-diagram-width',  String(data.width));
+        el.setAttribute('data-diagram-height', String(data.height));
+
+        const content = el.querySelector('.callout-content') as HTMLElement | null;
+        if (content) {
+            content.innerHTML = `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Диаграмма сохранена &mdash; дважды кликните для редактирования
+            </div>`;
+        }
+        const editBtn = el.querySelector('.diagram-edit-btn') as HTMLElement | null;
+        if (editBtn) editBtn.style.display = 'flex';
+
+        if (onAutoSave && editableRef.current) {
+            const cleaned  = cleanHTML(editableRef.current);
+            const markdown = htmlToMarkdown(cleaned);
+            onAutoSave(markdown);
+        }
+    }, [onAutoSave]);
+
+    // Register openDiagramEditor so App/PropertiesPanel can call it
+    const openDiagramEditor = useCallback((block: HTMLElement) => {
+        const calloutEl = block.classList.contains('callout-diagram') ? block : block.querySelector('.callout-diagram') as HTMLElement | null;
+        if (!calloutEl) return;
+        const encoded = calloutEl.getAttribute('data-diagram') || '';
+        let initialData: DiagramData | null = null;
+        if (encoded) { try { initialData = JSON.parse(decodeURIComponent(encoded)); } catch {} }
+        diagramTargetEl.current    = calloutEl;
+        diagramInitialData.current = initialData;
+        setDiagramEditorOpen(true);
+    }, []);
+
+    useEffect(() => {
+        if (onRegisterOpenDiagram) onRegisterOpenDiagram(openDiagramEditor);
+    }, [onRegisterOpenDiagram, openDiagramEditor]);
 
     // ── Design Mode: hover events for zoom toolbar + Ctrl+Wheel zoom ──────────
     useEffect(() => {
@@ -493,10 +555,31 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                             // Only sync DOM if entering design mode OR content was changed externally (e.g. from code editor)
                             // If it matches lastSavedContentRef, it means the change originated from the visual editor itself.
                             if (content !== lastSavedContentRef.current || editableRef.current.innerHTML === '') {
-                                editableRef.current.innerHTML = previewRef.current.innerHTML;
+                                // Build HTML from markdown directly (not from previewRef)
+                                // so that data-diagram attributes and Create/Edit buttons are preserved.
+                                const blocks = content.split(/\n(?=\n)/).filter(b => b.trim());
+                                const htmlParts: string[] = [];
+                                let i = 0;
+                                while (i < blocks.length) {
+                                    const block = blocks[i].trim();
+                                    // Multi-line callout: collect continuation lines
+                                    if (block.startsWith('> ')) {
+                                        let calloutLines = block;
+                                        while (i + 1 < blocks.length && blocks[i + 1].trim().startsWith('> ')) {
+                                            i++;
+                                            calloutLines += '\n' + blocks[i].trim();
+                                        }
+                                        htmlParts.push(markdownToHtmlHelper(calloutLines));
+                                    } else {
+                                        htmlParts.push(markdownToHtmlHelper(block));
+                                    }
+                                    i++;
+                                }
+                                editableRef.current.innerHTML = htmlParts.join('\n');
                                 // Update last saved content so we don't infinitely re-sync
                                 lastSavedContentRef.current = content;
                             }
+
                             
                             interactionsCleanupRef.current = setupInteractions(editableRef.current);
                             dndCleanupRef.current = setupDragAndDrop({ container: editableRef.current, markdownToHtmlHelper });
@@ -634,6 +717,16 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
             </div>
         </div>
         {zoomToolbar}
+
+        {/* DiagramEditor modal — Design Mode only */}
+        {diagramEditorOpen && designMode && createPortal(
+            <DiagramEditor
+                initialData={diagramInitialData.current}
+                onSave={handleDiagramSave}
+                onClose={() => setDiagramEditorOpen(false)}
+            />,
+            document.body
+        )}
         </>
     );
 }

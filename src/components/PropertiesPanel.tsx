@@ -9,14 +9,16 @@ interface PropertiesPanelProps {
     blocks: HTMLElement[];
     onUpdate: () => void;
     onBlockDelete: () => void;
+    onEditDiagram?: (block: HTMLElement) => void;
 }
 
-export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: PropertiesPanelProps) {
+export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete, onEditDiagram }: PropertiesPanelProps) {
     const block = blocks.length > 0 ? blocks[0] : null;
     const [styles, setStyles] = useState<CSSStyleDeclaration | null>(null);
     const [editTarget, setEditTarget] = useState<'container' | 'content'>('container');
 
     const isCallout = block?.classList.contains('callout') || !!block?.querySelector('.callout');
+    const isDiagramCallout = block?.classList.contains('callout-diagram') || !!block?.querySelector('.callout-diagram');
     const mermaidWrapper = block?.classList.contains('mermaid-diagram-wrapper') ? block : block?.querySelector('.mermaid-diagram-wrapper');
     const isMermaid = !!mermaidWrapper;
 
@@ -130,6 +132,36 @@ export default function PropertiesPanel({ blocks, onUpdate, onBlockDelete }: Pro
                             Content Body
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* DIAGRAM EDIT BUTTON */}
+            {isDiagramCallout && onEditDiagram && block && (
+                <div className="panel-section">
+                    <button
+                        onClick={() => onEditDiagram(block)}
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '10px 16px',
+                            background: 'linear-gradient(135deg, #89b4fa, #cba6f7)',
+                            color: '#1e1e2e',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Изменить диаграмму
+                    </button>
                 </div>
             )}
 

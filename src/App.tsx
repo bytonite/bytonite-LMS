@@ -95,6 +95,7 @@ function App() {
   const [selectedBlocks, setSelectedBlocks] = useState<HTMLElement[]>([]);
   const [activeSourcePos, setActiveSourcePos] = useState<string | null>(null);
   const previewSaveRef = useRef<(() => string) | null>(null);
+  const openDiagramEditorRef = useRef<((block: HTMLElement) => void) | null>(null);
 
   const handleSidebarMouseDown = (e: React.MouseEvent) => {
     setIsResizingSidebar(true);
@@ -583,8 +584,10 @@ function App() {
                             activeSourcePos={activeSourcePos}
                             onSelectSourcePos={setActiveSourcePos}
                             hasEditor={viewMode === 'split'}
+                            onRegisterOpenDiagram={(fn) => { openDiagramEditorRef.current = fn; }}
                         />
                     </div>
+
                   )}
                 </div>
             </div>
@@ -606,8 +609,9 @@ function App() {
                      return b.dataset.designId;
                  }).join(',')}
                  blocks={selectedBlocks} 
-                 onUpdate={() => setSelectedBlocks(prev => [...prev])} // Force re-render if needed
+                 onUpdate={() => setSelectedBlocks(prev => [...prev])}
                  onBlockDelete={() => setSelectedBlocks([])}
+                 onEditDiagram={(block) => openDiagramEditorRef.current?.(block)}
              />
         )}
       </div>
