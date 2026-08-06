@@ -1,126 +1,96 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { Excalidraw } from '@excalidraw/excalidraw';
-import './DiagramCallout.css';
+import React, { useEffect, useRef } from 'react';
 
-export interface DiagramData {
-    elements: any[];
-    appState: Record<string, any>;
-    files: Record<string, any>;
+export type DiagramData = {
+    svg: string; // The raw SVG string returned by draw.io
     width: number;
     height: number;
-}
+};
 
 interface DiagramEditorProps {
-    initialData: DiagramData | null;
+    initialData?: DiagramData | null;
     onSave: (data: DiagramData) => void;
     onClose: () => void;
 }
 
 export const DiagramEditor: React.FC<DiagramEditorProps> = ({ initialData, onSave, onClose }) => {
-    const apiRef = useRef<any>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [onClose]);
+        const handleMessage = (e: MessageEvent) => {
+            if (e.origin !== 'https://embed.diagrams.net') return;
+            
+            try {
+                const msg = JSON.parse(e.data);
+                
+                if (msg.event === 'init') {
+                    // Iframe is ready. Send load action.
+                    iframeRef.current?.contentWindow?.postMessage(JSON.stringify({
+                        action: 'load',
+                        autosave: 1,
+                        saveAndExit: '1',
+                        modified: 'unsaved',
+                        xml: initialData?.svg || '', // For empty, draw.io creates a new diagram
+                        title: 'Диаграмма'
+                    }), '*');
+                }
+                
+                if (msg.event === 'save') {
+                    // When user clicks save, we request the export as SVG
+                    iframeRef.current?.contentWindow?.postMessage(JSON.stringify({
+                        action: 'export',
+                        format: 'xmlsvg',
+                        spin: 'Updating...',
+                    }), '*');
+                }
 
-    useEffect(() => {
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = prev; };
-    }, []);
+                if (msg.event === 'export') {
+                    // We receive the exported SVG (data URI or raw depending on settings)
+                    // The 'data' field contains the SVG string since we requested xmlsvg format
+                    const rawSvg = msg.data;
+                    
+                    // Decode base64 if needed, or if it's already string, use it.
+                    let svgStr = rawSvg;
+                    if (svgStr.startsWith('data:image/svg+xml;base64,')) {
+                        svgStr = atob(svgStr.split(',')[1]);
+                    }
 
-    const handleSave = useCallback(() => {
-        const api = apiRef.current;
-        if (!api) return;
+                    // Extract width/height roughly from svg attributes if possible
+                    let width = 800;
+                    let height = 600;
+                    const wMatch = svgStr.match(/width="([\d.]+)px"/);
+                    const hMatch = svgStr.match(/height="([\d.]+)px"/);
+                    if (wMatch) width = Math.round(parseFloat(wMatch[1]));
+                    if (hMatch) height = Math.round(parseFloat(hMatch[1]));
 
-        const elements  = api.getSceneElements();
-        const appState  = api.getAppState();
-        const files     = api.getFiles();
+                    onSave({
+                        svg: svgStr,
+                        width,
+                        height
+                    });
+                }
+                
+                if (msg.event === 'exit') {
+                    onClose();
+                }
 
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        elements.forEach((el: any) => {
-            minX = Math.min(minX, el.x);
-            minY = Math.min(minY, el.y);
-            maxX = Math.max(maxX, el.x + (el.width  || 0));
-            maxY = Math.max(maxY, el.y + (el.height || 0));
-        });
+            } catch (err) {
+                console.error("Error parsing draw.io message", err);
+            }
+        };
 
-        const padding = 40;
-        const diagramWidth  = elements.length > 0 ? Math.max(maxX - minX + padding * 2, 400) : 800;
-        const diagramHeight = elements.length > 0 ? Math.max(maxY - minY + padding * 2, 300) : 500;
-
-        onSave({
-            elements,
-            appState: {
-                viewBackgroundColor: appState.viewBackgroundColor,
-                currentItemFontFamily: appState.currentItemFontFamily,
-                zoom: appState.zoom,
-            },
-            files,
-            width:  Math.round(diagramWidth),
-            height: Math.round(diagramHeight),
-        });
-    }, [onSave]);
-
-    const initialStateForEditor = initialData ? {
-        elements:  initialData.elements,
-        appState:  { ...initialData.appState, openSidebar: { name: 'library' }, gridSize: 20 },
-        files:     initialData.files,
-        scrollToContent: true,
-    } : {
-        appState: { openSidebar: { name: 'library' }, gridSize: 20 }
-    };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [initialData, onSave, onClose]);
 
     return (
         <div className="diagram-editor-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className="diagram-editor-modal" onMouseDown={(e) => e.stopPropagation()}>
-
-                <div className="diagram-editor-header">
-                    <div className="diagram-editor-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <path d="M3 9h18M9 21V9"/>
-                        </svg>
-                        Редактор диаграмм
-                    </div>
-                    <div className="diagram-editor-actions">
-                        <button className="diagram-btn diagram-btn-cancel" onClick={onClose}>Отмена</button>
-                        <button className="diagram-btn diagram-btn-save" onClick={handleSave}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                                <polyline points="17 21 17 13 7 13 7 21"/>
-                                <polyline points="7 3 7 8 15 8"/>
-                            </svg>
-                            Сохранить
-                        </button>
-                        <button className="diagram-btn diagram-btn-close" onClick={onClose} title="Закрыть (Esc)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="diagram-editor-body">
-                    <Excalidraw
-                        excalidrawAPI={(api: any) => { apiRef.current = api; }}
-                        initialData={initialStateForEditor}
-                        UIOptions={{
-                            dockedSidebarBreakpoint: 0,
-                            canvasActions: {
-                                saveToActiveFile: false,
-                                loadScene: true,
-                                export: { saveFileToDisk: true },
-                                toggleTheme: true,
-                            },
-                        }}
-                        langCode="ru-RU"
-                        theme="dark"
-                    />
-                </div>
+            <div className="diagram-editor-modal" style={{ padding: 0, overflow: 'hidden' }} onMouseDown={(e) => e.stopPropagation()}>
+                <iframe
+                    ref={iframeRef}
+                    title="Diagram Editor"
+                    src="https://embed.diagrams.net/?embed=1&ui=dark&spin=1&proto=json&configure=1&noSaveBtn=0"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                />
             </div>
         </div>
     );

@@ -16,7 +16,6 @@
     "@codemirror/state": "^6.4.0",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.23.0",
-    "@excalidraw/excalidraw": "^0.18.1",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/turndown": "^5.0.6",
     "codemirror": "^6.0.1",

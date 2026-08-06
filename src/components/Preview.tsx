@@ -94,7 +94,13 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
 
             const encoded = calloutEl.getAttribute('data-diagram') || '';
             let initialData: DiagramData | null = null;
-            if (encoded) { try { initialData = JSON.parse(decodeURIComponent(encoded)); } catch {} }
+            if (encoded) {
+                try {
+                    initialData = { svg: decodeURIComponent(encoded), width: 0, height: 0 };
+                } catch {
+                    initialData = { svg: encoded, width: 0, height: 0 };
+                }
+            }
 
             diagramTargetEl.current    = calloutEl;
             diagramInitialData.current = initialData;
@@ -111,16 +117,23 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
         setDiagramEditorOpen(false);
         if (!el) return;
 
-        const jsonStr = JSON.stringify(data);
-        el.setAttribute('data-diagram',        encodeURIComponent(jsonStr));
+        const svgStr = data.svg;
+        el.setAttribute('data-diagram',        encodeURIComponent(svgStr));
         el.setAttribute('data-diagram-width',  String(data.width));
         el.setAttribute('data-diagram-height', String(data.height));
 
         const content = el.querySelector('.callout-content') as HTMLElement | null;
         if (content) {
-            content.innerHTML = `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                Диаграмма сохранена &mdash; дважды кликните для редактирования
+            const isSvg = svgStr && svgStr.startsWith('<svg');
+            const renderedContent = isSvg 
+                ? svgStr 
+                : `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                    Диаграмма сохранена &mdash; дважды кликните для редактирования
+                   </div>`;
+
+            content.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+                ${renderedContent}
             </div>`;
         }
         const editBtn = el.querySelector('.diagram-edit-btn') as HTMLElement | null;
@@ -589,7 +602,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                                 if (jsonLines.length > 0) diagrams.push({ json: jsonLines.join('\n'), width: w, height: h });
                                                 else diagrams.push({ json: '', width: '0', height: '0' });
                                                 inDiagram = false; inExcalidraw = false;
-                                            } else if (stripped.startsWith('```excalidraw')) {
+                                            } else if (stripped.startsWith('```excalidraw') || stripped.startsWith('```drawio')) {
                                                 inExcalidraw = true;
                                             } else if (inExcalidraw && stripped.startsWith('```')) {
                                                 inExcalidraw = false;
@@ -612,8 +625,9 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                         const d = diagrams[idx];
                                         if (!d) return;
 
-                                        const hasJson = d.json.trim().startsWith('{');
-                                        el.setAttribute('data-diagram', hasJson ? encodeURIComponent(d.json) : '');
+                                        const rawJson = d.json.trim();
+                                        const hasData = rawJson.startsWith('{') || rawJson.startsWith('<svg');
+                                        el.setAttribute('data-diagram', hasData ? encodeURIComponent(rawJson) : '');
                                         el.setAttribute('data-diagram-width', d.width);
                                         el.setAttribute('data-diagram-height', d.height);
 
@@ -628,7 +642,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                         titleEl.innerHTML = `
                                             <div class="callout-icon">${diagramSvgIcon}</div>
                                             <div class="callout-title-inner">${titleText}</div>
-                                            <button class="diagram-edit-btn" contenteditable="false" style="${hasJson ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:5px 12px;margin-left:auto;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;font-size:11px;font-weight:600;color:#052e16;cursor:pointer;">
+                                            <button class="diagram-edit-btn" contenteditable="false" style="${hasData ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:5px 12px;margin-left:auto;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;font-size:11px;font-weight:600;color:#052e16;cursor:pointer;">
                                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                                 Редактировать
                                             </button>`;
@@ -640,10 +654,16 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                             contentEl.className = 'callout-content';
                                             el.appendChild(contentEl);
                                         }
-                                        if (hasJson) {
-                                            contentEl.innerHTML = `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                                                Диаграмма сохранена &mdash; нажмите <b>Редактировать</b> для изменения
+                                        if (hasData) {
+                                            const isSvg = rawJson.startsWith('<svg');
+                                            const renderedContent = isSvg
+                                                ? rawJson
+                                                : `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                                    Диаграмма сохранена &mdash; нажмите <b>Редактировать</b> для изменения
+                                                   </div>`;
+                                            contentEl.innerHTML = `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+                                                ${renderedContent}
                                             </div>`;
                                         } else {
                                             contentEl.innerHTML = `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">

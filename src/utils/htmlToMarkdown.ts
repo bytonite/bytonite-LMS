@@ -215,9 +215,9 @@ export const htmlToMarkdown = (html: string): string => {
                 try { dataJson = decodeURIComponent(encoded); } catch { dataJson = encoded; }
             }
 
-            if (dataJson && dataJson.startsWith('{')) {
-                // Store JSON in a fenced code block tagged "excalidraw"
-                return `\n> [!diagram] ${title}\n> \`\`\`excalidraw\n> ${dataJson}\n> \`\`\`\n> <!-- w:${width} h:${height} -->\n`;
+            if (dataJson && (dataJson.startsWith('{') || dataJson.startsWith('<svg'))) {
+                // Store SVG/JSON in a fenced code block tagged "drawio"
+                return `\n> [!diagram] ${title}\n> \`\`\`drawio\n> ${dataJson}\n> \`\`\`\n> <!-- w:${width} h:${height} -->\n`;
             }
             // Empty diagram (no data yet)
             return `\n> [!diagram] ${title}\n`;
@@ -308,7 +308,7 @@ export const markdownToHtmlHelper = (md: string): string => {
         // contentBody has blockquote markers stripped. Extract JSON from ```excalidraw block.
         // Normalize: remove any remaining '> ' prefixes
         const normalizedBody = contentBody.replace(/^>\s?/gm, '').trim();
-        const excalidrawMatch = normalizedBody.match(/```excalidraw\s*([\s\S]*?)\s*```/);
+        const excalidrawMatch = normalizedBody.match(/```(?:excalidraw|drawio)\s*([\s\S]*?)\s*```/);
         const savedJson = excalidrawMatch ? excalidrawMatch[1].trim() : null;
         const dimMatch  = normalizedBody.match(/<!--\s*w:(\d+)\s*h:(\d+)\s*-->/);
         const savedW    = dimMatch ? dimMatch[1] : '0';
@@ -316,10 +316,18 @@ export const markdownToHtmlHelper = (md: string): string => {
 
         const diagramSvgIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
 
+        // Check if savedJson is SVG or old JSON
+        const isSvg = savedJson && savedJson.startsWith('<svg');
+        const renderedContent = isSvg 
+            ? savedJson 
+            : `<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Диаграмма сохранена — дважды кликните для редактирования
+               </div>`;
+
         const contentHtml = savedJson
-            ? `<div class="diagram-saved-indicator" style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                    Диаграмма сохранена — дважды кликните для редактирования
+            ? `<div class="diagram-saved-indicator" style="display:flex;justify-content:center;overflow:hidden;background:#fff;border-radius:6px;padding:8px;">
+                    ${renderedContent}
                </div>`
             : `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#89b4fa;opacity:0.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>

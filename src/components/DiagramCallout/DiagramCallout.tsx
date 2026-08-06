@@ -25,12 +25,17 @@ export const DiagramCallout: React.FC<DiagramCalloutProps> = ({
 
     const parsedData: DiagramData | null = (() => {
         if (!initialDataJson) return null;
-        try { return JSON.parse(initialDataJson); } catch { return null; }
+        try { 
+            if (initialDataJson.startsWith('<svg')) {
+                return { svg: initialDataJson, width: 0, height: 0 };
+            }
+            return null; // Ignore legacy Excalidraw JSON since we only support Draw.io SVG now
+        } catch { return { svg: initialDataJson, width: 0, height: 0 }; }
     })();
 
     const handleSave = useCallback((data: DiagramData) => {
         setIsEditorOpen(false);
-        onSave(JSON.stringify(data), data.width, data.height);
+        onSave(data.svg, data.width, data.height);
     }, [onSave]);
 
     const openEditor = useCallback((e: React.MouseEvent) => {

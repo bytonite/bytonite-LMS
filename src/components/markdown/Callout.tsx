@@ -177,7 +177,7 @@ export const Callout = ({ children }: any) => {
         remainingChildren.forEach(child => {
             if (isValidElement(child)) {
                 const text = getRecursiveText(child);
-                if (text.startsWith('{"elements"')) savedJson = text;
+                if (text.startsWith('<svg') || text.startsWith('{"elements"')) savedJson = text;
             }
         });
 
