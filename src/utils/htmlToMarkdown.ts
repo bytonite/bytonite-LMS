@@ -324,9 +324,8 @@ export const markdownToHtmlHelper = (md: string): string => {
             : `<div class="diagram-callout-empty" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px;text-align:center;">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#89b4fa;opacity:0.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                     <p style="font-size:13px;color:var(--text-muted);margin:0;">Диаграмма не создана</p>
-                    <button class="diagram-create-btn" contenteditable="false" style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:linear-gradient(135deg,#4ade80,#22c55e);color:#052e16;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Создать диаграмму
+                    <button class="diagram-create-btn" contenteditable="false" title="Создать диаграмму" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:linear-gradient(135deg,#4ade80,#22c55e);color:#052e16;border:none;border-radius:50%;font-size:13px;font-weight:600;cursor:pointer;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                </div>`;
 
