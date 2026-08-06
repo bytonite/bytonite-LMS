@@ -15,6 +15,7 @@ import TextToolbar from './TextToolbar';
 import { htmlToMarkdown, markdownToHtmlHelper, cleanHTML } from '../utils/htmlToMarkdown';
 import { rehypeSourceLine, fixPaths } from '../utils/markdownUtils';
 import { transformImageUri } from '../utils/uriTransform';
+import { DesignModeContext } from '../contexts/DesignModeContext';
 
 interface PreviewProps {
     content: string;
@@ -615,6 +616,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                 )}
 
                 <div ref={previewRef} style={{ display: designMode ? 'none' : 'block' }} onClick={handleBlockClick}>
+                    <DesignModeContext.Provider value={false}>
                     <ReactMarkdown 
                         remarkPlugins={[remarkGfm]} 
                         rehypePlugins={[rehypeRaw, rehypeSourceLine]}
@@ -627,6 +629,7 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                     >
                         {processedContent}
                     </ReactMarkdown>
+                    </DesignModeContext.Provider>
                 </div>
             </div>
         </div>

@@ -50,7 +50,8 @@ export const DiagramCallout: React.FC<DiagramCalloutProps> = ({
                     onEdit={openEditor as any}
                     isDesignMode={isDesignMode}
                 />
-            ) : (
+            ) : isDesignMode ? (
+                /* Empty state: only shown in Design Mode */
                 <div className="diagram-callout-empty">
                     <div className="diagram-callout-empty-icon">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -67,10 +68,13 @@ export const DiagramCallout: React.FC<DiagramCalloutProps> = ({
                         Создать диаграмму
                     </button>
                 </div>
+            ) : (
+                /* Reading Mode, no diagram: show nothing */
+                null
             )}
 
-            {/* ── Editor modal (portal to document.body) ── */}
-            {isEditorOpen && createPortal(
+            {/* ── Editor modal (portal to document.body) — Design Mode only ── */}
+            {isEditorOpen && isDesignMode && createPortal(
                 <DiagramEditor
                     initialData={parsedData}
                     onSave={handleSave}
@@ -79,5 +83,6 @@ export const DiagramCallout: React.FC<DiagramCalloutProps> = ({
                 document.body
             )}
         </>
+
     );
 };
