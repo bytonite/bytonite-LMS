@@ -66,10 +66,12 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ initialData, onSav
 
     const initialStateForEditor = initialData ? {
         elements:  initialData.elements,
-        appState:  initialData.appState,
+        appState:  { ...initialData.appState, openSidebar: { name: 'library' }, gridSize: 20 },
         files:     initialData.files,
         scrollToContent: true,
-    } : undefined;
+    } : {
+        appState: { openSidebar: { name: 'library' }, gridSize: 20 }
+    };
 
     return (
         <div className="diagram-editor-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -107,10 +109,12 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ initialData, onSav
                         excalidrawAPI={(api: any) => { apiRef.current = api; }}
                         initialData={initialStateForEditor}
                         UIOptions={{
+                            dockedSidebarBreakpoint: 0,
                             canvasActions: {
                                 saveToActiveFile: false,
                                 loadScene: true,
                                 export: { saveFileToDisk: true },
+                                toggleTheme: true,
                             },
                         }}
                         langCode="ru-RU"
