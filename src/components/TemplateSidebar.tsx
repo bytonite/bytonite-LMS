@@ -188,10 +188,11 @@ export default function TemplateSidebar({ visible, rootPath }: TemplateSidebarPr
     const filteredTemplates = localTemplates.filter(t => {
         if (filter === 'all') return true;
         if (filter === 'grid') return t.id.startsWith('grid-');
-        if (filter === 'callout') return t.id.startsWith('callout-') || t.id.startsWith('code-block');
+        if (filter === 'callout') return t.id.startsWith('callout-') || t.id.startsWith('code-block') || t.id.startsWith('mermaid-') || t.id.startsWith('diagram-');
         if (filter === 'custom') return t.id.startsWith('custom-');
         return true;
     });
+
 
     return (
         <div style={{ display: 'flex', height: '100%', flexShrink: 0 }}>
