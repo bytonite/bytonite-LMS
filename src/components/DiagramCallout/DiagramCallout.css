@@ -239,3 +239,11 @@
     border-color: #89b4fa;
     color: #89b4fa;
 }
+
+/* Responsive Diagram SVG */
+.callout-diagram .callout-content svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
