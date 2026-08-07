@@ -35,7 +35,7 @@ interface Shape {
 const DEFAULT_FILL = '#313244';
 const DEFAULT_STROKE = '#89b4fa';
 const FILL_COLORS = ['#313244', '#1e1e2e', '#89b4fa', '#a6e3a1', '#f9e2af', '#f38ba8', '#cba6f7', '#45475a', 'transparent'];
-const STROKE_COLORS = ['#89b4fa', '#a6e3a1', '#f38ba8', '#f9e2af', '#cba6f7', '#cdd6f4', '#6c7086'];
+const STROKE_COLORS = ['#89b4fa', '#a6e3a1', '#f38ba8', '#f9e2af', '#cba6f7', '#cdd6f4', 'currentColor'];
 
 let idCounter = 0;
 const newId = () => `shape_${Date.now()}_${idCounter++}`;
@@ -49,19 +49,19 @@ function renderShapeSvg(s: Shape, selected: boolean): string {
         case 'rect':
             return `<g>
   <rect x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}" rx="6" fill="${s.fill}" stroke="${s.stroke}" stroke-width="${sw}" ${selAttr}/>
-  ${s.label ? `<text x="${s.x + s.width/2}" y="${s.y + s.height/2 + s.fontSize*0.35}" text-anchor="middle" fill="#cdd6f4" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
+  ${s.label ? `<text x="${s.x + s.width/2}" y="${s.y + s.height/2 + s.fontSize*0.35}" text-anchor="middle" fill="currentColor" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
 </g>`;
         case 'ellipse':
             return `<g>
   <ellipse cx="${s.x + s.width/2}" cy="${s.y + s.height/2}" rx="${s.width/2}" ry="${s.height/2}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="${sw}" ${selAttr}/>
-  ${s.label ? `<text x="${s.x + s.width/2}" y="${s.y + s.height/2 + s.fontSize*0.35}" text-anchor="middle" fill="#cdd6f4" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
+  ${s.label ? `<text x="${s.x + s.width/2}" y="${s.y + s.height/2 + s.fontSize*0.35}" text-anchor="middle" fill="currentColor" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
 </g>`;
         case 'diamond': {
             const cx = s.x + s.width/2, cy = s.y + s.height/2;
             const pts = `${cx},${s.y} ${s.x+s.width},${cy} ${cx},${s.y+s.height} ${s.x},${cy}`;
             return `<g>
   <polygon points="${pts}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="${sw}" ${selAttr}/>
-  ${s.label ? `<text x="${cx}" y="${cy + s.fontSize*0.35}" text-anchor="middle" fill="#cdd6f4" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
+  ${s.label ? `<text x="${cx}" y="${cy + s.fontSize*0.35}" text-anchor="middle" fill="currentColor" font-size="${s.fontSize}" font-family="Inter,sans-serif">${escSvg(s.label)}</text>` : ''}
 </g>`;
         }
         case 'arrow': {
@@ -115,7 +115,7 @@ function buildSvg(shapes: Shape[]): { svg: string; width: number; height: number
       <polygon points="0 0, 10 3.5, 0 7" fill="${DEFAULT_STROKE}"/>
     </marker>
   </defs>
-  <rect width="${W}" height="${H}" fill="#1e1e2e"/>
+  <rect width="${W}" height="${H}" fill="transparent"/>
   <g transform="translate(${tx},${ty})">${shapesHtml}</g>
 </svg>`;
     return { svg, width: Math.round(W), height: Math.round(H) };
@@ -348,7 +348,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
     ];
 
     return (
-        <div className="diagram-editor-overlay" style={{ background: '#1e1e2e' }}>
+        <div className="diagram-editor-overlay" style={{ background: 'var(--background-primary)' }}>
             <div className="diagram-editor-modal">
                 {/* ── Header ── */}
                 <div className="diagram-editor-header">
@@ -364,7 +364,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                     <div className="diagram-editor-actions">
                         <button className="diagram-btn diagram-btn-cancel" onClick={onClose}>Отмена</button>
                         <button className="diagram-btn diagram-btn-save" onClick={handleSave}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ pointerEvents: 'none' }}>
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
                             </svg>
                             Сохранить
@@ -375,7 +375,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                 {/* ── Body ── */}
                 <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
                     {/* Left Toolbar */}
-                    <div style={{ width: 56, background: '#181825', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0', gap: 4 }}>
+                    <div style={{ width: 56, background: 'var(--background-secondary)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0', gap: 4 }}>
                         {TOOLS.map(t => (
                             <button
                                 key={t.id}
@@ -386,7 +386,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                     border: 'none',
                                     borderRadius: 8,
                                     background: tool === t.id ? 'rgba(137,180,250,0.2)' : 'transparent',
-                                    color: tool === t.id ? '#89b4fa' : '#6c7086',
+                                    color: tool === t.id ? 'var(--interactive-accent)' : 'var(--text-muted)',
                                     cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     transition: 'all 0.15s',
@@ -401,15 +401,15 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                         <div style={{ width: 32, height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 0' }}/>
 
                         {/* Undo */}
-                        <button title="Отменить (Ctrl+Z)" onClick={undo} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: '#6c7086', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button title="Отменить (Ctrl+Z)" onClick={undo} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
                         </button>
                         {/* Redo */}
-                        <button title="Повторить (Ctrl+Y)" onClick={redo} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: '#6c7086', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button title="Повторить (Ctrl+Y)" onClick={redo} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
                         </button>
                         {/* Delete */}
-                        <button title="Удалить (Del)" onClick={deleteSelected} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: '#6c7086', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button title="Удалить (Del)" onClick={deleteSelected} style={{ width: 40, height: 40, border: 'none', borderRadius: 8, background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
                     </div>
@@ -417,7 +417,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                     {/* Canvas */}
                     <div
                         ref={containerRef}
-                        style={{ flex: 1, overflow: 'hidden', background: '#262637', position: 'relative', cursor: tool === 'select' ? 'default' : 'crosshair' }}
+                        style={{ flex: 1, overflow: 'hidden', background: 'var(--background-primary)', position: 'relative', cursor: tool === 'select' ? 'default' : 'crosshair' }}
                         onMouseDown={handleCanvasMouseDown}
                         onMouseMove={handleCanvasMouseMove}
                         onMouseUp={handleCanvasMouseUp}
@@ -457,11 +457,11 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                         </svg>
 
                         {/* Zoom indicator */}
-                        <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(24,24,37,0.85)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#6c7086', display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} style={{ background: 'none', border: 'none', color: '#6c7086', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>−</button>
+                        <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'var(--background-secondary)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center', border: '1px solid var(--border-subtle)' }}>
+                            <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>−</button>
                             {Math.round(zoom * 100)}%
-                            <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} style={{ background: 'none', border: 'none', color: '#6c7086', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>+</button>
-                            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} style={{ background: 'none', border: 'none', color: '#6c7086', cursor: 'pointer', fontSize: 11, padding: 0 }}>сброс</button>
+                            <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>+</button>
+                            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11, padding: 0 }}>сброс</button>
                         </div>
 
                         {/* Label edit overlay */}
@@ -480,7 +480,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                         onChange={e2 => setEditingLabel(prev => prev ? { ...prev, value: e2.target.value } : null)}
                                         onBlur={commitLabel}
                                         onKeyDown={e2 => { if (e2.key === 'Enter' || e2.key === 'Escape') commitLabel(); }}
-                                        style={{ width: '90%', background: 'rgba(24,24,37,0.95)', border: '1px solid #89b4fa', borderRadius: 4, color: '#cdd6f4', fontSize: s.fontSize * zoom, textAlign: 'center', padding: '2px 4px', outline: 'none' }}
+                                        style={{ width: '90%', background: 'var(--background-secondary)', border: '1px solid var(--interactive-accent)', borderRadius: 4, color: 'var(--text-normal)', fontSize: s.fontSize * zoom, textAlign: 'center', padding: '2px 4px', outline: 'none' }}
                                     />
                                 </div>
                             );
@@ -488,8 +488,8 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                     </div>
 
                     {/* Right Properties Panel */}
-                    <div style={{ width: 200, background: '#181825', borderLeft: '1px solid rgba(255,255,255,0.07)', overflowY: 'auto', padding: '12px' }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: '#6c7086', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Свойства</div>
+                    <div style={{ width: 200, background: 'var(--background-secondary)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto', padding: '12px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Свойства</div>
 
                         {selected ? (
                             <>
@@ -499,7 +499,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                             <button key={c} onClick={() => {
                                                 const next = shapes.map(s => s.id === selectedId ? { ...s, fill: c } : s);
                                                 pushHistory(next);
-                                            }} style={{ width: 20, height: 20, borderRadius: 4, border: selected.fill === c ? '2px solid #89b4fa' : '2px solid transparent', background: c === 'transparent' ? 'none' : c, cursor: 'pointer', outline: c === 'transparent' ? '1px dashed #6c7086' : 'none' }}/>
+                                            }} style={{ width: 20, height: 20, borderRadius: 4, border: selected.fill === c ? '2px solid var(--interactive-accent)' : '2px solid transparent', background: c === 'transparent' ? 'none' : c, cursor: 'pointer', outline: c === 'transparent' ? '1px dashed var(--text-muted)' : 'none' }}/>
                                         ))}
                                     </div>
                                 </PropRow>
@@ -517,21 +517,21 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                     <input type="range" min={1} max={8} value={selected.strokeWidth} onChange={e => {
                                         const next = shapes.map(s => s.id === selectedId ? { ...s, strokeWidth: +e.target.value } : s);
                                         setShapes(next);
-                                    }} onMouseUp={() => pushHistory(shapes)} style={{ width: '100%', accentColor: '#89b4fa' }}/>
+                                    }} onMouseUp={() => pushHistory(shapes)} style={{ width: '100%', accentColor: 'var(--interactive-accent)' }}/>
                                 </PropRow>
                                 <PropRow label="Шрифт">
                                     <input type="range" min={10} max={32} value={selected.fontSize} onChange={e => {
                                         const next = shapes.map(s => s.id === selectedId ? { ...s, fontSize: +e.target.value } : s);
                                         setShapes(next);
                                     }} onMouseUp={() => pushHistory(shapes)} style={{ width: '100%', accentColor: '#89b4fa' }}/>
-                                    <span style={{ fontSize: 11, color: '#6c7086' }}>{selected.fontSize}px</span>
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{selected.fontSize}px</span>
                                 </PropRow>
                                 <PropRow label="Текст">
                                     <input
                                         value={selected.label}
                                         onChange={e => setShapes(prev => prev.map(s => s.id === selectedId ? { ...s, label: e.target.value } : s))}
                                         onBlur={() => pushHistory(shapes)}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#cdd6f4', fontSize: 12, padding: '4px 8px', outline: 'none' }}
+                                        style={{ width: '100%', background: 'var(--background-primary)', border: '1px solid var(--border-subtle)', borderRadius: 6, color: 'var(--text-normal)', fontSize: 12, padding: '4px 8px', outline: 'none' }}
                                     />
                                 </PropRow>
                             </>
@@ -540,7 +540,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                 <PropRow label="Заливка">
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                         {FILL_COLORS.map(c => (
-                                            <button key={c} onClick={() => setFillColor(c)} style={{ width: 20, height: 20, borderRadius: 4, border: fillColor === c ? '2px solid #89b4fa' : '2px solid transparent', background: c === 'transparent' ? 'none' : c, cursor: 'pointer', outline: c === 'transparent' ? '1px dashed #6c7086' : 'none' }}/>
+                                            <button key={c} onClick={() => setFillColor(c)} style={{ width: 20, height: 20, borderRadius: 4, border: fillColor === c ? '2px solid var(--interactive-accent)' : '2px solid transparent', background: c === 'transparent' ? 'none' : c, cursor: 'pointer', outline: c === 'transparent' ? '1px dashed var(--text-muted)' : 'none' }}/>
                                         ))}
                                     </div>
                                 </PropRow>
@@ -552,17 +552,17 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
                                     </div>
                                 </PropRow>
                                 <PropRow label="Толщина">
-                                    <input type="range" min={1} max={8} value={strokeWidth} onChange={e => setStrokeWidth(+e.target.value)} style={{ width: '100%', accentColor: '#89b4fa' }}/>
+                                    <input type="range" min={1} max={8} value={strokeWidth} onChange={e => setStrokeWidth(+e.target.value)} style={{ width: '100%', accentColor: 'var(--interactive-accent)' }}/>
                                 </PropRow>
                             </>
                         )}
 
-                        <div style={{ marginTop: 16, fontSize: 11, color: '#45475a', lineHeight: 1.7 }}>
-                            <div><b style={{ color: '#6c7086' }}>Ctrl+Z</b> — отменить</div>
-                            <div><b style={{ color: '#6c7086' }}>Del</b> — удалить</div>
-                            <div><b style={{ color: '#6c7086' }}>Dbl-click</b> — текст</div>
-                            <div><b style={{ color: '#6c7086' }}>Alt+drag</b> — панорама</div>
-                            <div><b style={{ color: '#6c7086' }}>Колесо</b> — зум</div>
+                        <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                            <div><b style={{ color: 'var(--text-normal)' }}>Ctrl+Z</b> — отменить</div>
+                            <div><b style={{ color: 'var(--text-normal)' }}>Del</b> — удалить</div>
+                            <div><b style={{ color: 'var(--text-normal)' }}>Dbl-click</b> — текст</div>
+                            <div><b style={{ color: 'var(--text-normal)' }}>Alt+drag</b> — панорама</div>
+                            <div><b style={{ color: 'var(--text-normal)' }}>Колесо</b> — зум</div>
                         </div>
                     </div>
                 </div>
@@ -574,7 +574,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
 function PropRow({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: '#6c7086', marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>{label}</div>
             {children}
         </div>
     );

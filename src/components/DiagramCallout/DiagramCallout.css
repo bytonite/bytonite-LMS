@@ -5,7 +5,7 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: var(--background-primary, #1e1e2e);
+    background: var(--background-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -22,7 +22,7 @@
     flex-direction: column;
     width: 100vw;
     height: 100vh;
-    background: var(--background-primary, #1e1e2e);
+    background: var(--background-primary);
     border-radius: 0;
     border: none;
     box-shadow: none;
@@ -41,8 +41,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 16px;
-    background: var(--background-secondary, #181825);
-    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
     gap: 12px;
 }
@@ -53,11 +53,11 @@
     gap: 10px;
     font-size: 15px;
     font-weight: 600;
-    color: #cdd6f4;
+    color: var(--text-normal);
 }
 
 .diagram-editor-title svg {
-    color: #89b4fa;
+    color: var(--interactive-accent);
 }
 
 .diagram-editor-actions {
@@ -80,24 +80,24 @@
 }
 
 .diagram-btn-save {
-    background: #89b4fa;
-    color: #1e1e2e;
+    background: var(--interactive-accent);
+    color: var(--background-primary);
 }
 
 .diagram-btn-save:hover {
-    background: #b4d0ff;
+    filter: brightness(1.1);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(137,180,250,0.35);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); /* using a generic shadow, but it's fine for interactive-accent */
 }
 
 .diagram-btn-cancel {
-    background: rgba(255,255,255,0.07);
-    color: #cdd6f4;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: var(--text-normal);
+    border: 1px solid var(--border-subtle);
 }
 
 .diagram-btn-cancel:hover {
-    background: rgba(255,255,255,0.12);
+    background: var(--background-secondary);
 }
 
 .diagram-btn-close {
