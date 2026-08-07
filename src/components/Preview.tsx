@@ -641,11 +641,11 @@ export default function Preview({ content, filePath, allFiles, onFileSelect, des
                                         const titleText = titleEl.querySelector('.callout-title-inner')?.textContent || 'Диаграмма';
                                         titleEl.innerHTML = `
                                             <div class="callout-icon">${diagramSvgIcon}</div>
-                                            <div class="callout-title-inner">${titleText}</div>
-                                            <button class="diagram-edit-btn" contenteditable="false" style="${hasData ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:5px 12px;margin-left:auto;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;font-size:11px;font-weight:600;color:#052e16;cursor:pointer;">
+                                            <button class="diagram-edit-btn" contenteditable="false" style="${hasData ? 'display:flex' : 'display:none'};align-items:center;gap:5px;padding:5px 12px;margin-right:8px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;font-size:11px;font-weight:600;color:#052e16;cursor:pointer;">
                                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                                 Редактировать
-                                            </button>`;
+                                            </button>
+                                            <div class="callout-title-inner">${titleText}</div>`;
 
                                         // Rebuild content area
                                         let contentEl = el.querySelector('.callout-content') as HTMLElement | null;
