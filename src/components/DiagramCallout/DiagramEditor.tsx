@@ -109,7 +109,8 @@ function buildSvg(shapes: Shape[]): { svg: string; width: number; height: number
     const ty = pad - minY;
 
     const shapesHtml = shapes.map(s => renderShapeSvg(s, false)).join('\n');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}px" height="${H}px" viewBox="0 0 ${W} ${H}">
+    const shapesJson = JSON.stringify(shapes).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}px" height="${H}px" viewBox="0 0 ${W} ${H}" data-shapes="${shapesJson}">
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="${DEFAULT_STROKE}"/>
@@ -122,7 +123,7 @@ function buildSvg(shapes: Shape[]): { svg: string; width: number; height: number
 }
 
 // ── Main Editor Component ──────────────────────────────────────────────────
-export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose }) => {
+export const DiagramEditor: React.FC<DiagramEditorProps> = ({ initialData, onSave, onClose }) => {
     const canvasRef = useRef<SVGSVGElement>(null);
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -142,9 +143,28 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({ onSave, onClose })
 
     // Load from initialData (SVG — try to restore or just show it)
     useEffect(() => {
+        if (initialData?.svg) {
+            const match = initialData.svg.match(/data-shapes="([^"]*)"/);
+            if (match && match[1]) {
+                try {
+                    const unescaped = match[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                    const parsed = JSON.parse(unescaped);
+                    if (Array.isArray(parsed)) {
+                        setShapes(parsed);
+                        setHistory([parsed]);
+                        setHistIndex(0);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse shapes', e);
+                }
+            }
+        }
         // Start blank if no initial data or can't parse
         setShapes([]);
-    }, []);
+        setHistory([[]]);
+        setHistIndex(0);
+    }, [initialData]);
 
     // Push to history
     const pushHistory = useCallback((next: Shape[]) => {
