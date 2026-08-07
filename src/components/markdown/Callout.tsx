@@ -27,23 +27,32 @@ function DiagramCalloutWrapper({ savedJson, title }: { savedJson: string | null;
     const color    = CALLOUT_COLOR_MAP['note'];
     const rgbColor = hexToRgb(color);
 
+    // In read mode with a diagram: show only the SVG, hide the title
+    const hasData = !!savedJson;
+    const hideTitle = hasData && !isDesignMode;
+
     return (
         <div
             ref={calloutRef}
             className="callout callout-diagram"
             data-diagram={savedJson || undefined}
-            style={{ '--callout-color': rgbColor } as React.CSSProperties}
+            style={hideTitle
+                ? { '--callout-color': rgbColor, background: 'transparent', border: 'none', borderLeft: 'none', padding: 0, margin: 0, boxShadow: 'none' } as React.CSSProperties
+                : { '--callout-color': rgbColor } as React.CSSProperties
+            }
         >
-            <div className="callout-title">
-                <div className="callout-icon">
-                    <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <path d="M3 9h18M9 21V9"/>
-                    </svg>
+            {!hideTitle && (
+                <div className="callout-title">
+                    <div className="callout-icon">
+                        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M3 9h18M9 21V9"/>
+                        </svg>
+                    </div>
+                    <div className="callout-title-inner">{title || 'Диаграмма'}</div>
                 </div>
-                <div className="callout-title-inner">{title || 'Диаграмма'}</div>
-            </div>
-            <div className="callout-content">
+            )}
+            <div className="callout-content" style={hideTitle ? { padding: 0, margin: 0 } : {}}>
                 <DiagramCallout
                     initialDataJson={savedJson}
                     onSave={handleSave}
