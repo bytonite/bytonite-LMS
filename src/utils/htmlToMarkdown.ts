@@ -217,7 +217,8 @@ export const htmlToMarkdown = (html: string): string => {
 
             if (dataJson && (dataJson.startsWith('{') || dataJson.startsWith('<svg'))) {
                 // Store SVG/JSON in a fenced code block tagged "drawio"
-                return `\n> [!diagram] ${title}\n> \`\`\`drawio\n> ${dataJson}\n> \`\`\`\n> <!-- w:${width} h:${height} -->\n`;
+                const indentedData = dataJson.replace(/\n/g, '\n> ');
+                return `\n> [!diagram] ${title}\n> \`\`\`drawio\n> ${indentedData}\n> \`\`\`\n> <!-- w:${width} h:${height} -->\n`;
             }
             // Empty diagram (no data yet)
             return `\n> [!diagram] ${title}\n`;
