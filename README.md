@@ -1,4 +1,5 @@
-# bytonite-v1
+# bytonite LMS
+
 
 > Markdown-редактор с визуальным конструктором страниц, режимом Live Preview и синхронизацией кода
 
