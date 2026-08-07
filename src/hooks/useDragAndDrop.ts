@@ -98,10 +98,11 @@ export const setupDragAndDrop = ({ container, markdownToHtmlHelper }: SetupDragA
                         handle.draggable = true;
                         const isCodeBlock = child.classList.contains('code-block-wrapper');
                         const isMermaid   = child.classList.contains('mermaid-diagram-wrapper');
+                        const isDiagramCallout = child.classList.contains('callout-diagram');
                         Object.assign(handle.style, {
                             position: 'absolute',
-                            right: isCodeBlock ? '220px' : isMermaid ? '' : '12px',
-                            left:  isMermaid ? '8px' : '',
+                            right: isCodeBlock ? '220px' : (isMermaid || isDiagramCallout) ? '' : '12px',
+                            left:  isMermaid ? '8px' : isDiagramCallout ? '12px' : '',
                             top:   isCodeBlock ? '-24px' : '8px',
                             width: '32px',
                             height: '24px',
