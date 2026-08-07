@@ -247,3 +247,28 @@
     display: block;
     margin: 0 auto;
 }
+
+/* Clean mode: when title is hidden (read mode with diagram), remove callout chrome */
+.callout-diagram:has(.callout-title[style*="display: none"]),
+.callout-diagram:has(.callout-title[style*="display:none"]) {
+    background: transparent !important;
+    border: none !important;
+    border-left: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.callout-diagram:has(.callout-title[style*="display: none"]) .callout-content,
+.callout-diagram:has(.callout-title[style*="display:none"]) .callout-content {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.callout-diagram:has(.callout-title[style*="display: none"]) .diagram-saved-indicator,
+.callout-diagram:has(.callout-title[style*="display:none"]) .diagram-saved-indicator {
+    padding: 0 !important;
+    border-radius: 6px;
+    overflow: hidden;
+}
